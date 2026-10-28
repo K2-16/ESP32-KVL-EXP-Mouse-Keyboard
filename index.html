@@ -21,8 +21,7 @@
     #netStatus { font-size: 12px; font-weight: bold; background: #222; padding: 4px 8px; border-radius: 4px; border: 1px solid #444; }
     #refreshBtn { font-size: 12px; font-weight: bold; background: #333; color: #00d2ff; padding: 4px 8px; border-radius: 4px; border: 1px solid #00d2ff; cursor: pointer; }
     
-    /* ضفنا outline: none عشان ميعملش برواز لما ياخد Focus */
-    #trackpad { height: 160px; min-height: 160px; background-color: #2a2a2a; border-radius: 10px; margin-bottom: 8px; touch-action: none; border: 2px solid #00d2ff; display: flex; align-items: center; justify-content: center; color: #555; font-size: 14px; outline: none;}
+    #trackpad { height: 160px; min-height: 160px; background-color: #2a2a2a; border-radius: 10px; margin-bottom: 8px; touch-action: none; border: 2px solid #00d2ff; display: flex; align-items: center; justify-content: center; color: #555; font-size: 14px; outline: none; cursor: crosshair;}
     
     .row { display: flex; gap: 6px; margin-bottom: 8px; width: 100%; }
     .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; margin-bottom: 8px; }
@@ -51,6 +50,9 @@
     #textInput { flex: 1; height: 60px; min-height: 60px; padding: 10px; font-size: 14px; border-radius: 6px; border: 2px solid #444; outline: none; background-color: #222; color: white; resize: vertical; transition: 0.2s; }
     
     #appContent { display: none; flex-direction: column; height: 100%; overflow-y: auto; padding-bottom: 20px;}
+
+    /* الحقل السري لالتقاط الكيبورد الفيزيائي (لا يرى بالعين) */
+    #hiddenKeyCatcher { position: absolute; top: -9999px; left: -9999px; opacity: 0; width: 1px; height: 1px; }
   </style>
 </head>
 <body>
@@ -65,8 +67,10 @@
     </div>
   </div>
 
-  <!-- الواجهة الأساسية -->
   <div id="appContent">
+    <!-- الحقل السري لالتقاط الكيبورد الفيزيائي -->
+    <input type="text" id="hiddenKeyCatcher" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+
     <div id="topBar">
       <div style="font-size: 16px; font-weight: bold; color: #00d2ff;">KVM Pro</div>
       <div class="status-group">
@@ -75,8 +79,7 @@
       </div>
     </div>
 
-    <!-- ضفنا tabindex="0" عشان يقبل فوكس الكيبورد -->
-    <div id="trackpad" tabindex="0">Touch or Click here to Lock Mouse</div>
+    <div id="trackpad">Touch or Click here to Lock Mouse & Keyboard</div>
     
     <div class="grid-3">
       <button class="btn btn-left" onclick="triggerEffect(this); sendCmd('click', 'L')">Left</button>
@@ -149,68 +152,36 @@
     function detectNetwork() {
       const controller = new AbortController();
       setTimeout(() => controller.abort(), 800);
-      
       fetch(LOCAL_BASE + "/ping", { signal: controller.signal })
-        .then(res => {
-          if (res.ok) {
-            ACTIVE_URL = LOCAL_BASE;
-            document.getElementById('netStatus').innerHTML = "🟢 Local";
-            checkSavedLogin();
-          }
-        })
-        .catch(err => {
-          ACTIVE_URL = NGROK_BASE;
-          document.getElementById('netStatus').innerHTML = "🔵 Remote";
-          checkSavedLogin();
-        });
+        .then(res => { if (res.ok) { ACTIVE_URL = LOCAL_BASE; document.getElementById('netStatus').innerHTML = "🟢 Local"; checkSavedLogin(); } })
+        .catch(err => { ACTIVE_URL = NGROK_BASE; document.getElementById('netStatus').innerHTML = "🔵 Remote"; checkSavedLogin(); });
     }
 
-    function checkSavedLogin() {
-      if (userPassword !== "") verifyPassword(true);
-    }
+    function checkSavedLogin() { if (userPassword !== "") verifyPassword(true); }
 
     function verifyPassword(isAuto = false) {
       let pwd = isAuto ? userPassword : document.getElementById('passInput').value;
       let errorDiv = document.getElementById('loginError');
       if (pwd === "") return;
-
-      fetch(ACTIVE_URL + "/login", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
-        body: JSON.stringify({ password: pwd })
-      })
+      fetch(ACTIVE_URL + "/login", { method: 'POST', headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' }, body: JSON.stringify({ password: pwd }) })
       .then(res => {
         if (res.status === 200) {
-          userPassword = pwd;
-          localStorage.setItem("kvm_password", pwd);
+          userPassword = pwd; localStorage.setItem("kvm_password", pwd);
           document.getElementById('lockScreen').style.display = "none";
           document.getElementById('appContent').style.display = "flex";
           document.body.style.overflow = "auto";
         } else {
           localStorage.removeItem("kvm_password");
-          if(!isAuto) {
-            errorDiv.style.display = "block";
-            document.getElementById('passInput').value = "";
-          }
+          if(!isAuto) { errorDiv.style.display = "block"; document.getElementById('passInput').value = ""; }
         }
-      })
-      .catch(err => {
-        if(!isAuto) {
-          errorDiv.innerText = "Connection Error!";
-          errorDiv.style.display = "block";
-        }
-      });
+      }).catch(err => { if(!isAuto) { errorDiv.innerText = "Connection Error!"; errorDiv.style.display = "block"; } });
     }
 
     window.onload = detectNetwork;
 
     function triggerEffect(el) { el.classList.add('clicked'); setTimeout(() => el.classList.remove('clicked'), 150); }
     function sendCmd(type, val) {
-      fetch(ACTIVE_URL + "/set_command", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
-        body: JSON.stringify({ type: type, val: val })
-      }).catch(err => console.log(err));
+      fetch(ACTIVE_URL + "/set_command", { method: 'POST', headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' }, body: JSON.stringify({ type: type, val: val }) }).catch(err => console.log(err));
     }
 
     let isDragging = false;
@@ -222,37 +193,20 @@
       sendCmd('drag', isDragging ? "1" : "-1"); 
     }
 
-    function toggleMod(btn, code) {
-      btn.classList.toggle('active');
-      sendCmd('mod', `${code},${btn.classList.contains('active') ? 1 : 0}`);
-    }
-
-    function releaseAll() {
-      isDragging = false;
-      document.getElementById('dragBtn').innerText = "Drag: OFF";
-      document.querySelectorAll('.active').forEach(b => b.classList.remove('active'));
-      sendCmd('release', '1');
-    }
-
-    function sendText() {
-      let textInput = document.getElementById('textInput');
-      let text = textInput.value;
-      if(text !== "") { sendCmd('text', text); textInput.value = ''; }
-    }
+    function toggleMod(btn, code) { btn.classList.toggle('active'); sendCmd('mod', `${code},${btn.classList.contains('active') ? 1 : 0}`); }
+    function releaseAll() { isDragging = false; document.getElementById('dragBtn').innerText = "Drag: OFF"; document.querySelectorAll('.active').forEach(b => b.classList.remove('active')); sendCmd('release', '1'); }
+    function sendText() { let textInput = document.getElementById('textInput'); let text = textInput.value; if(text !== "") { sendCmd('text', text); textInput.value = ''; } }
 
     // ==========================================
-    // التحكم المعالج للماوس والكيبورد (Optimized)
+    // التحكم المشترك (الماوس + الكيبورد) المحسن
     // ==========================================
     let trackpad = document.getElementById('trackpad');
-    let moveTimeout = null, accumulatedDx = 0, accumulatedDy = 0;
-    let lastX = 0, lastY = 0;
+    let hiddenCatcher = document.getElementById('hiddenKeyCatcher'); // المربع المخفي
+    let moveTimeout = null, accumulatedDx = 0, accumulatedDy = 0, lastX = 0, lastY = 0;
     let isPointerLocked = false;
 
     // 1. التاتش (بصباعك)
-    trackpad.addEventListener('touchstart', (e) => {
-      lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
-    });
-
+    trackpad.addEventListener('touchstart', (e) => { lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; });
     trackpad.addEventListener('touchmove', (e) => {
       accumulatedDx += Math.round((e.touches[0].clientX - lastX) * 1.5);
       accumulatedDy += Math.round((e.touches[0].clientY - lastY) * 1.5);
@@ -261,11 +215,16 @@
       e.preventDefault();
     }, { passive: false });
 
-    // 2. تفعيل قفل الماوس وتفعيل تركيز الكيبورد
+    // 2. تفعيل قفل الماوس وتفعيل "تركيز الكيبورد الإجباري"
     trackpad.addEventListener('click', () => {
-      trackpad.focus(); // ⬅️ الحل السحري لتشغيل الكيبورد الخارجي
+      hiddenCatcher.focus(); // ⬅️ الإجبار على قراءة الكيبورد
       trackpad.requestPointerLock = trackpad.requestPointerLock || trackpad.webkitRequestPointerLock;
       if(trackpad.requestPointerLock) trackpad.requestPointerLock();
+    });
+
+    // لو الموبايل حاول يفصل الكيبورد، نرجعه تاني طول ما وضع التحكم شغال
+    hiddenCatcher.addEventListener('blur', () => {
+      if (isPointerLocked) hiddenCatcher.focus();
     });
 
     document.addEventListener('pointerlockchange', () => {
@@ -273,78 +232,46 @@
       if (isPointerLocked) {
         document.getElementById('netStatus').innerHTML = "🔒 Control Locked";
         document.getElementById('netStatus').style.color = "#00b894";
+        hiddenCatcher.focus();
       } else {
         document.getElementById('netStatus').innerHTML = "🟢 Local / Remote";
         document.getElementById('netStatus').style.color = "white";
+        hiddenCatcher.blur();
       }
     });
 
-    // 3. الماوس الفيزيائي
+    // 3. حركة الماوس الفيزيائي
     document.addEventListener('mousemove', (e) => {
       if (isPointerLocked) {
-        // ضاعفنا سرعة وحساسية الماوس هنا
-        let mouseSensitivity = 2.5; 
-        accumulatedDx += (e.movementX * mouseSensitivity);
-        accumulatedDy += (e.movementY * mouseSensitivity);
+        accumulatedDx += (e.movementX * 2.5);
+        accumulatedDy += (e.movementY * 2.5);
         processMouseMovement();
       }
     });
 
-    // معالجة دقيقة تمنع التقطيع (Anti-Chopping Engine)
     function processMouseMovement() {
       if (!moveTimeout) {
-        // قللنا الوقت لـ 15 ملي ثانية لاستجابة فورية جداً (Zero Lag)
         moveTimeout = setTimeout(() => {
           let sendX = Math.round(accumulatedDx);
           let sendY = Math.round(accumulatedDy);
-          
-          // 🛑 حماية الـ Overflow: بما إن كود الأردوينو بيضرب في 1.2، أقصى رقم نبعته 100 عشان مايعديش 127 ويقطع
-          if (sendX > 100) sendX = 100;
-          if (sendX < -100) sendX = -100;
-          if (sendY > 100) sendY = 100;
-          if (sendY < -100) sendY = -100;
-
-          if (sendX !== 0 || sendY !== 0) {
-            sendCmd('move', `${sendX},${sendY}`);
-            accumulatedDx -= sendX; 
-            accumulatedDy -= sendY;
-          } else {
-            accumulatedDx = 0; accumulatedDy = 0;
-          }
+          if (sendX > 100) sendX = 100; if (sendX < -100) sendX = -100;
+          if (sendY > 100) sendY = 100; if (sendY < -100) sendY = -100;
+          if (sendX !== 0 || sendY !== 0) { sendCmd('move', `${sendX},${sendY}`); accumulatedDx -= sendX; accumulatedDy -= sendY; } 
+          else { accumulatedDx = 0; accumulatedDy = 0; }
           moveTimeout = null;
         }, 15); 
       }
     }
 
-    document.addEventListener('mousedown', (e) => {
+    document.addEventListener('mousedown', (e) => { if (isPointerLocked) { if (e.button === 0) sendCmd('drag', '1'); else if (e.button === 2) sendCmd('click', 'R'); } });
+    document.addEventListener('mouseup', (e) => { if (isPointerLocked && e.button === 0) sendCmd('drag', '-1'); });
+    document.addEventListener('wheel', (e) => { if (isPointerLocked) { if (e.deltaY > 0) sendCmd('scroll', '-3'); else sendCmd('scroll', '3'); } }, { passive: true });
+    document.addEventListener('contextmenu', (e) => { if (isPointerLocked) e.preventDefault(); });
+
+    // 4. التقاط الكيبورد من المربع المخفي (المفتاح السحري)
+    hiddenCatcher.addEventListener('keydown', (e) => {
       if (isPointerLocked) {
-        if (e.button === 0) sendCmd('drag', '1');
-        else if (e.button === 2) sendCmd('click', 'R');
-      }
-    });
-
-    document.addEventListener('mouseup', (e) => {
-      if (isPointerLocked && e.button === 0) {
-        sendCmd('drag', '-1');
-      }
-    });
-
-    document.addEventListener('wheel', (e) => {
-      if (isPointerLocked) {
-        if (e.deltaY > 0) sendCmd('scroll', '-3');
-        else sendCmd('scroll', '3');
-      }
-    }, { passive: true });
-
-    document.addEventListener('contextmenu', (e) => {
-      if (isPointerLocked) e.preventDefault(); 
-    });
-
-    // 4. الكيبورد الفيزيائي (تعديل التقاط الأزرار)
-    // نقلنا المستمع (Listener) للـ document عشان نضمن إنه يلقط دايماً
-    document.addEventListener('keydown', (e) => {
-      if (isPointerLocked) {
-        e.preventDefault(); 
+        e.preventDefault(); // منع الموبايل من كتابة أي شيء داخلياً
         
         if (e.key === "Escape") {
           document.exitPointerLock(); 
@@ -357,6 +284,9 @@
           let keyCode = getHIDKeyCode(e.key);
           if (keyCode > 0) sendCmd('key', keyCode.toString());
         }
+        
+        // تفريغ الحقل فوراً عشان يفضل جاهز
+        hiddenCatcher.value = '';
       }
     });
 
