@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-  <title>Pure KVM Pro - Final Edition</title>
+  <title>Pure KVM Pro - Final Plus</title>
   <style>
     * { box-sizing: border-box; }
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; background-color: #0f111a; color: #ffffff; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
@@ -72,7 +72,7 @@
     <input type="text" id="hiddenKeyCatcher" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
 
     <div id="topBar">
-      <div style="font-size: 14px; font-weight: bold; color: #00d2ff;">⚡ Pure KVM Pro - Final</div>
+      <div style="font-size: 14px; font-weight: bold; color: #00d2ff;">⚡ Pure KVM Pro - Final Plus</div>
       <div class="status-group">
         <button id="refreshBtn" onclick="location.reload()">🔄 Refresh</button>
         <div id="netStatus">🟢 Ready</div>
@@ -89,13 +89,13 @@
       <button class="btn btn-right" onclick="sendCmd('click', 'R')">Right Click</button>
     </div>
 
-    <!-- Analog Mouse Movement Pad (مع سرعة أعلى) -->
+    <!-- Analog Mouse Movement Pad -->
     <div class="analog-pad">
       <div class="analog-title">Mouse Analog Movement Pad</div>
-      <button class="key-btn a-up" onpointerdown="sendCmd('joy', '0,-8')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-UP ⬆️</button>
-      <button class="key-btn a-left" onpointerdown="sendCmd('joy', '-8,0')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-LFT ⬅️</button>
-      <button class="key-btn a-down" onpointerdown="sendCmd('joy', '0,8')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-DN ⬇️</button>
-      <button class="key-btn a-right" onpointerdown="sendCmd('joy', '8,0')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-RGT ➡️</button>
+      <button class="key-btn a-up" onpointerdown="sendCmd('joy', '0,-10')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-UP ⬆️</button>
+      <button class="key-btn a-left" onpointerdown="sendCmd('joy', '-10,0')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-LFT ⬅️</button>
+      <button class="key-btn a-down" onpointerdown="sendCmd('joy', '0,10')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-DN ⬇️</button>
+      <button class="key-btn a-right" onpointerdown="sendCmd('joy', '10,0')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-RGT ➡️</button>
     </div>
 
     <!-- Scroll Buttons -->
@@ -110,7 +110,7 @@
       <button class="btn" style="background:#0078d4; width:80px; font-weight:bold;" onclick="sendTextDirect()">Send</button>
     </div>
 
-    <!-- Clipboard & Special Actions (تم ربط Copy, Paste, Undo بالفانكشنز بدقة) -->
+    <!-- Clipboard & Special Actions -->
     <div class="grid-4">
       <button class="key-btn" style="background:#0984e3;" onclick="sendMacro([128, 99])">Copy 📋</button>
       <button class="key-btn" style="background:#00b894;" onclick="sendMacro([128, 118])">Paste 📝</button>
@@ -188,7 +188,6 @@
       }).catch(err => console.log(err));
     }
 
-    // ربط الـ Macro المباشر للاختصارات (Copy, Paste, Undo)
     function sendMacro(keysArray) {
       sendCmd('combo', keysArray.join(','));
     }
@@ -217,14 +216,14 @@
       }
     }
 
-    // Trackpad & Mouse Engine (مع زيادة سرعة وحساسية الـ DPI)
+    // Trackpad & Mouse Engine (مع مضاعف DPI قوي لتعويض بطء الـ Wireless)
     let trackpad = document.getElementById('trackpad'), hiddenCatcher = document.getElementById('hiddenKeyCatcher');
     let isPointerLocked = false, moveTimeout = null, accDx = 0, accDy = 0, lastX = 0, lastY = 0;
 
     trackpad.addEventListener('touchstart', (e) => { lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; });
     trackpad.addEventListener('touchmove', (e) => {
-      accDx += Math.round((e.touches[0].clientX - lastX) * 1.5); // زيادة حساسية الماوس باد
-      accDy += Math.round((e.touches[0].clientY - lastY) * 1.5); // زيادة حساسية الماوس باد
+      accDx += Math.round((e.touches[0].clientX - lastX) * 2.2); 
+      accDy += Math.round((e.touches[0].clientY - lastY) * 2.2); 
       lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
       processMouseMovement();
       e.preventDefault();
@@ -250,8 +249,8 @@
 
     document.addEventListener('mousemove', (e) => {
       if (!isPointerLocked) return;
-      accDx += Math.round(e.movementX * 1.5); // زيادة DPI
-      accDy += Math.round(e.movementY * 1.5); // زيادة DPI
+      accDx += Math.round(e.movementX * 2.2); // تضاعف حركة الماوس لرفع الـ DPI الحقيقي
+      accDy += Math.round(e.movementY * 2.2); 
       processMouseMovement();
     });
 
@@ -282,7 +281,7 @@
     document.addEventListener('contextmenu', e => { if(isPointerLocked) e.preventDefault(); });
 
     // ==========================================
-    // 🧠 Keyboard & Shortcuts Engine (Shift + Arrows, Ctrl+Shift, Win, 0, Clean Combos)
+    // 🧠 Final Engine (Shift+Enter, Win Key, Zero Fix, Shift/Ctrl+Shift Arrows)
     // ==========================================
     hiddenCatcher.addEventListener('keydown', (e) => {
       if (isPointerLocked) {
@@ -295,18 +294,25 @@
           return; 
         }
 
-        // 1. زرار الويندوز (Win)
-        if (e.code === 'MetaLeft' || e.code === 'MetaRight') {
+        // 1. زرار الويندوز (Win Key Fix)
+        if (e.code === 'MetaLeft' || e.code === 'MetaRight' || e.key === 'Meta') {
           sendCmd('win', '1');
           hiddenCatcher.value = '';
           return;
         }
 
-        // 2. الاختصارات المركبة (Ctrl, Alt, Shift, Win + أي زرار أو أسهم للتحديد)
+        // 2. اختصار Shift + Enter لكسر السطر
+        if (e.shiftKey && e.code === 'Enter') {
+          sendCmd('combo', '129,176'); // Shift (129) + Enter (176)
+          hiddenCatcher.value = '';
+          return;
+        }
+
+        // 3. الاختصارات المركبة (Ctrl, Alt, Shift, Win + أي زرار أو أسهم للتحديد)
         if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) {
           let keys = [];
           if (e.ctrlKey) keys.push(128);
-          if (e.shiftKey) keys.push(129); // دعم تحديد النص حرف حرف أو كلمة كلمة
+          if (e.shiftKey) keys.push(129); 
           if (e.altKey) keys.push(130);
           if (e.metaKey) keys.push(131);
 
@@ -317,7 +323,6 @@
             return;
           }
 
-          // التعامل مع الأسهم مع Shift / Ctrl+Shift (للتحديد)
           let arrowCode = getArrowCode(e.code);
           if (arrowCode > 0) {
             keys.push(arrowCode);
@@ -328,14 +333,18 @@
 
           let keyChar = e.key.toLowerCase();
           if (keyChar.length === 1 && keyChar !== 'control' && keyChar !== 'alt' && keyChar !== 'shift' && keyChar !== 'meta') {
-            keys.push(keyChar.charCodeAt(0));
+            if (keyChar === '0') {
+              keys.push(48); // دعم Ctrl+0 أو Shift+0
+            } else {
+              keys.push(keyChar.charCodeAt(0));
+            }
             sendCmd('combo', keys.join(','));
           }
           hiddenCatcher.value = '';
           return;
         }
 
-        // 3. التحديد بالأسهم منفردة (لو معهاش Modifiers)
+        // 4. الأسهم المنفردة
         let arrowCodeOnly = getArrowCode(e.code);
         if (arrowCodeOnly > 0) {
           sendCmd('key', arrowCodeOnly.toString());
@@ -343,8 +352,10 @@
           return;
         }
 
-        // 4. الكتابة العادية والمفاتيح (شامل رقم 0)
-        if (e.key.length === 1) {
+        // 5. الكتابة العادية والمفاتيح (شامل علاج رقم 0 الصريح)
+        if (e.key === '0' || e.code === 'Digit0' || e.code === 'Numpad0') {
+          sendCmd('key', '48'); // إرسال كود الصفر الصريح
+        } else if (e.key.length === 1) {
           sendCmd('text', e.key);
         } else {
           let code = getHIDCode(e.code, e.key);
@@ -371,7 +382,7 @@
         case 'Backspace': return 178;
         case 'Tab': return 179;
         case 'Delete': return 212;
-        case 'Digit0': return 48; // تصحيح رقم 0 العلوي
+        case 'Digit0': return 48; 
         case 'Numpad0': return 234; 
         case 'F1': return 194; case 'F2': return 195; case 'F3': return 196;
         case 'F4': return 197; case 'F5': return 198; case 'F12': return 205;
