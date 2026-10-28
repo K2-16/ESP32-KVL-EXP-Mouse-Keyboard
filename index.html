@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-  <title>Pure KVM Pro - Auto Keyboard</title>
+  <title>Direct KVM Pro</title>
   <style>
     * { box-sizing: border-box; }
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; background-color: #0f111a; color: #ffffff; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
@@ -72,7 +72,7 @@
     <input type="text" id="hiddenKeyCatcher" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
 
     <div id="topBar">
-      <div style="font-size: 14px; font-weight: bold; color: #00d2ff;">⚡ Pure KVM Pro</div>
+      <div style="font-size: 14px; font-weight: bold; color: #00d2ff;">⚡ Direct KVM Pro</div>
       <div class="status-group">
         <button id="refreshBtn" onclick="location.reload()">🔄 Refresh</button>
         <div id="netStatus">🟢 Ready</div>
@@ -106,7 +106,7 @@
 
     <!-- Text Typing Area -->
     <div class="row">
-      <textarea id="textInput" placeholder="Type here for batch live queue streaming..."></textarea>
+      <textarea id="textInput" placeholder="Type here for direct live streaming..."></textarea>
       <button class="btn" style="background:#0078d4; width:80px; font-weight:bold;" onclick="sendTextDirect()">Send</button>
     </div>
 
@@ -179,47 +179,15 @@
     }
     window.onload = detectNetwork;
 
-    // Batch-Queue Engine
-    let requestQueue = [];
-    let isSending = false;
-    let textBuffer = "";
-    let batchTimer = null;
-
+    // ==========================================
+    // Direct Execution Engine (No Queue, Zero Latency)
+    // ==========================================
     function sendCmd(type, val) {
-      if (type === 'text') {
-        textBuffer += val;
-        if (!batchTimer) {
-          batchTimer = setTimeout(() => {
-            if (textBuffer.length > 0) {
-              requestQueue.push({ type: 'text', val: textBuffer });
-              textBuffer = "";
-              processQueue();
-            }
-            batchTimer = null;
-          }, 20);
-        }
-        return;
-      }
-      requestQueue.push({ type: type, val: val });
-      processQueue();
-    }
-
-    function processQueue() {
-      if (isSending || requestQueue.length === 0) return;
-      isSending = true;
-      let currentReq = requestQueue.shift();
-
       fetch(ACTIVE_URL + "/set_command", {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
-        body: JSON.stringify({ type: currentReq.type, val: currentReq.val })
-      })
-      .then(() => { isSending = false; processQueue(); })
-      .catch(() => {
-        requestQueue.unshift(currentReq);
-        isSending = false;
-        setTimeout(processQueue, 300);
-      });
+        body: JSON.stringify({ type: type, val: val })
+      }).catch(err => console.log(err));
     }
 
     let isDragging = false;
@@ -240,7 +208,10 @@
 
     function sendTextDirect() {
       let ti = document.getElementById('textInput');
-      if(ti.value !== "") { sendCmd('text', ti.value); ti.value = ''; }
+      if(ti.value !== "") { 
+        sendCmd('text', ti.value); 
+        ti.value = ''; 
+      }
     }
 
     // Trackpad & Mouse Movement Engine
@@ -297,7 +268,7 @@
     document.addEventListener('contextmenu', e => { if(isPointerLocked) e.preventDefault(); });
 
     // ==========================================
-    // 🧠 Pure Automatic Physical Keyboard Shortcuts Engine
+    // 🧠 Direct Physical Keyboard Shortcuts Engine (No Queue)
     // ==========================================
     hiddenCatcher.addEventListener('keydown', (e) => {
       if (isPointerLocked) {
@@ -310,20 +281,20 @@
           return; 
         }
 
-        // Catching physical Ctrl, Alt, Win, Shift combinations automatically
+        // Automatic Physical Shortcuts Detection (Ctrl+C, Ctrl+V, etc.)
         if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) {
           let keys = [];
-          if (e.ctrlKey) keys.push(128); // Ctrl
-          if (e.shiftKey) keys.push(129); // Shift
-          if (e.altKey) keys.push(130);   // Alt
-          if (e.metaKey) keys.push(131);  // Win
+          if (e.ctrlKey) keys.push(128);
+          if (e.shiftKey) keys.push(129);
+          if (e.altKey) keys.push(130);
+          if (e.metaKey) keys.push(131);
 
           let keyChar = e.key.toLowerCase();
           if (keyChar.length === 1 && keyChar !== 'control' && keyChar !== 'alt' && keyChar !== 'shift' && keyChar !== 'meta') {
             keys.push(keyChar.charCodeAt(0));
-            sendCmd('combo', keys.join(',')); // Automatically sent to Server/ESP32
+            sendCmd('combo', keys.join(','));
           } else if (e.code === 'Tab') {
-            keys.push(179); // Alt+Tab or Ctrl+Tab
+            keys.push(179);
             sendCmd('combo', keys.join(','));
           }
           hiddenCatcher.value = '';
