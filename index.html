@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+  <title>Secure KVM Pro</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 8px; background-color: #121212; color: white; display: flex; flex-direction: column; min-height: 100vh; overflow: hidden; }
+    
+    #lockScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    .login-card { background: #1e1e1e; padding: 30px; border-radius: 12px; border: 1px solid #333; width: 100%; max-width: 350px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+    .login-card h2 { color: #00d2ff; margin-bottom: 20px; font-size: 24px; }
+    #passInput { font-size: 18px; text-align: center; padding: 12px; width: 100%; border-radius: 6px; border: 2px solid #444; background: #2a2a2a; color: white; margin-bottom: 15px; outline: none; transition: 0.2s; }
+    #passInput:focus { border-color: #00d2ff; }
+    #loginBtn { padding: 12px; width: 100%; font-size: 16px; font-weight: bold; background: #0078d4; border: none; border-radius: 6px; color: white; cursor: pointer; transition: 0.2s; }
+    #loginBtn:active { background: #005a9e; }
+    #loginError { color: #ff4757; margin-top: 12px; font-size: 14px; font-weight: bold; display: none; }
+    
+    #topBar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 0 5px; }
+    .status-group { display: flex; align-items: center; gap: 6px; }
+    #netStatus { font-size: 12px; font-weight: bold; background: #222; padding: 4px 8px; border-radius: 4px; border: 1px solid #444; }
+    #refreshBtn { font-size: 12px; font-weight: bold; background: #333; color: #00d2ff; padding: 4px 8px; border-radius: 4px; border: 1px solid #00d2ff; cursor: pointer; }
+    
+    #trackpad { height: 160px; min-height: 160px; background-color: #2a2a2a; border-radius: 10px; margin-bottom: 8px; touch-action: none; border: 2px solid #00d2ff; display: flex; align-items: center; justify-content: center; color: #555; font-size: 14px;}
+    
+    .row { display: flex; gap: 6px; margin-bottom: 8px; width: 100%; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; margin-bottom: 8px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; margin-bottom: 8px; }
+    
+    .btn { padding: 12px 5px; font-size: 14px; font-weight: bold; cursor: pointer; border: none; border-radius: 6px; background-color: #333; color: white; transition: 0.05s; display: flex; align-items: center; justify-content: center; }
+    .btn:active, .btn.clicked { background-color: #666; transform: scale(0.96); }
+    
+    .btn-left { border-bottom: 3px solid #ff4757; }
+    .btn-right { border-bottom: 3px solid #2ed573; }
+    .btn-drag { border-bottom: 3px solid #feca57; background-color: #444; }
+    .btn-drag.active { background-color: #feca57; color: black; }
+    .btn-scroll { background-color: #0096c7; border-bottom: 3px solid #00b4d8; }
+    
+    .key-btn { padding: 12px 5px; font-size: 13px; background-color: #444; border: none; border-radius: 6px; color: white; font-weight: bold; transition: 0.05s; cursor: pointer; user-select: none; }
+    .key-btn:active, .key-btn.clicked { background-color: #00d2ff; color: black; transform: scale(0.95); }
+    .key-btn.active { background-color: #00d2ff !important; color: black !important; border-bottom: 3px solid #0096c7; font-weight: 900; }
+    
+    .analog-pad { display: grid; grid-template-areas: ". a-up ." "a-left a-down a-right"; gap: 6px; width: 100%; margin-bottom: 8px; background: #1a1a1a; padding: 10px; border-radius: 8px; border: 1px dashed #555;}
+    .a-up { grid-area: a-up; background-color: #e67e22;} .a-down { grid-area: a-down; background-color: #e67e22;} .a-left { grid-area: a-left; background-color: #e67e22;} .a-right { grid-area: a-right; background-color: #e67e22;}
+    .analog-title { text-align: center; font-size: 12px; color: #aaa; margin-bottom: 5px; grid-column: span 3; }
+
+    .d-pad { display: grid; grid-template-areas: ". up ." "left down right"; gap: 6px; flex: 1; }
+    .up { grid-area: up; } .down { grid-area: down; } .left { grid-area: left; } .right { grid-area: right; }
+    
+    #textInput { flex: 1; height: 60px; min-height: 60px; padding: 10px; font-size: 14px; border-radius: 6px; border: 2px solid #444; outline: none; background-color: #222; color: white; resize: vertical; transition: 0.2s; }
+    
+    #appContent { display: none; flex-direction: column; height: 100%; overflow-y: auto; padding-bottom: 20px;}
+  </style>
+</head>
+<body>
+
+  <!-- شاشة القفل -->
+  <div id="lockScreen">
+    <div class="login-card">
+      <h2>🔐 Secure KVM</h2>
+      <input type="password" id="passInput" placeholder="Enter Password" onkeypress="if(event.key === 'Enter') verifyPassword()">
+      <button id="loginBtn" onclick="verifyPassword()">Login</button>
+      <div id="loginError">❌ Wrong Password! Try Again.</div>
+    </div>
+  </div>
+
+  <!-- الواجهة الأساسية -->
+  <div id="appContent">
+    <div id="topBar">
+      <div style="font-size: 16px; font-weight: bold; color: #00d2ff;">KVM Pro</div>
+      <div class="status-group">
+        <button id="refreshBtn" onclick="location.reload()">🔄 Refresh</button>
+        <div id="netStatus">⏳ Detecting...</div>
+      </div>
+    </div>
+
+    <!-- مساحة التاتش / الماوس البلوتوث -->
+    <div id="trackpad">Touch or Click here to Lock Mouse</div>
+    
+    <div class="grid-3">
+      <button class="btn btn-left" onclick="triggerEffect(this); sendCmd('click', 'L')">Left</button>
+      <button id="dragBtn" class="btn btn-drag" onclick="toggleDrag()">Drag: OFF</button>
+      <button class="btn btn-right" onclick="triggerEffect(this); sendCmd('click', 'R')">Right</button>
+    </div>
+
+    <div class="analog-pad">
+      <div class="analog-title">Hold to Move Mouse (Analog)</div>
+      <button class="key-btn a-up" onpointerdown="sendCmd('joy', '0,-5')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-UP ⬆️</button>
+      <button class="key-btn a-left" onpointerdown="sendCmd('joy', '-5,0')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-LFT ⬅️</button>
+      <button class="key-btn a-down" onpointerdown="sendCmd('joy', '0,5')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-DN ⬇️</button>
+      <button class="key-btn a-right" onpointerdown="sendCmd('joy', '5,0')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-RGT ➡️</button>
+    </div>
+
+    <div class="row">
+      <button class="btn btn-scroll" style="flex:1;" onclick="triggerEffect(this); sendCmd('scroll', '3')">Scroll ⬆️</button>
+      <button class="btn btn-scroll" style="flex:1;" onclick="triggerEffect(this); sendCmd('scroll', '-3')">Scroll ⬇️</button>
+    </div>
+
+    <div class="row">
+      <textarea id="textInput" placeholder="Type multi-line text here..."></textarea>
+      <button class="btn btn-send" style="background:#007bff; padding:0 15px; border-radius:6px; font-weight:bold; border:none; color:white;" onclick="triggerEffect(this); sendText()">Send Text</button>
+    </div>
+
+    <div class="row">
+      <button class="btn" style="flex:1; background:#0984e3;" onclick="triggerEffect(this); sendCmd('copy', '1')">📋 Copy</button>
+      <button class="btn" style="flex:1; background:#00b894;" onclick="triggerEffect(this); sendCmd('paste', '1')">📝 Paste</button>
+      <button class="btn" style="flex:1; background:#e17055;" onclick="triggerEffect(this); sendCmd('undo', '1')">↩️ Undo</button>
+    </div>
+
+    <div class="grid-4">
+      <button class="key-btn mod-btn" onclick="toggleMod(this, 128)">Ctrl</button>
+      <button class="key-btn mod-btn" onclick="toggleMod(this, 130)">Alt</button>
+      <button class="key-btn mod-btn" onclick="toggleMod(this, 129)">Shift</button>
+      <button class="key-btn" style="background:#0078d4" onclick="triggerEffect(this); sendCmd('win', '1')">Win 🪟</button>
+    </div>
+
+    <div class="grid-4">
+      <button class="key-btn" style="background:#8e44ad" onclick="triggerEffect(this); sendCmd('lang', '1')">Lang 🌐</button>
+      <button class="key-btn" style="background:#e1b12c; color:black;" onclick="triggerEffect(this); sendCmd('key', '193')">Caps</button>
+      <button class="key-btn" onclick="triggerEffect(this); sendCmd('altf4', '1')">Alt+F4</button>
+      <button class="key-btn" style="background:#d63031" onclick="triggerEffect(this); sendCmd('cad', '1')">CAD</button>
+    </div>
+
+    <div class="grid-4">
+      <button class="key-btn" onclick="triggerEffect(this); sendCmd('key', '177')">ESC</button>
+      <button class="key-btn" onclick="triggerEffect(this); sendCmd('key', '212')">DEL</button>
+      <button class="key-btn" onclick="triggerEffect(this); sendCmd('key', '178')">B-Space</button>
+      <button class="key-btn" style="background:#28a745" onclick="triggerEffect(this); sendCmd('key', '176')">Enter</button>
+    </div>
+
+    <div class="row">
+      <button class="key-btn key-clr" style="flex: 0.5;" onclick="triggerEffect(this); releaseAll()">CLR All</button>
+      <div class="d-pad">
+        <button class="key-btn up" onclick="triggerEffect(this); sendCmd('key', '218')">UP</button>
+        <button class="key-btn left" onclick="triggerEffect(this); sendCmd('key', '216')">LT</button>
+        <button class="key-btn down" onclick="triggerEffect(this); sendCmd('key', '217')">DN</button>
+        <button class="key-btn right" onclick="triggerEffect(this); sendCmd('key', '215')">RT</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // إعدادات الاتصال والشبكة
+    // ==========================================
+    const NGROK_BASE = "https://sharply-snarl-buckle.ngrok-free.dev";
+    const LOCAL_BASE = "http://192.168.1.7:8080";
+    let ACTIVE_URL = NGROK_BASE;
+    let userPassword = localStorage.getItem("kvm_password") || "";
+
+    function detectNetwork() {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(), 800);
+      
+      fetch(LOCAL_BASE + "/ping", { signal: controller.signal })
+        .then(res => {
+          if (res.ok) {
+            ACTIVE_URL = LOCAL_BASE;
+            document.getElementById('netStatus').innerHTML = "🟢 Local";
+            checkSavedLogin();
+          }
+        })
+        .catch(err => {
+          ACTIVE_URL = NGROK_BASE;
+          document.getElementById('netStatus').innerHTML = "🔵 Remote";
+          checkSavedLogin();
+        });
+    }
+
+    function checkSavedLogin() {
+      if (userPassword !== "") verifyPassword(true);
+    }
+
+    function verifyPassword(isAuto = false) {
+      let pwd = isAuto ? userPassword : document.getElementById('passInput').value;
+      let errorDiv = document.getElementById('loginError');
+      if (pwd === "") return;
+
+      fetch(ACTIVE_URL + "/login", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+        body: JSON.stringify({ password: pwd })
+      })
+      .then(res => {
+        if (res.status === 200) {
+          userPassword = pwd;
+          localStorage.setItem("kvm_password", pwd);
+          document.getElementById('lockScreen').style.display = "none";
+          document.getElementById('appContent').style.display = "flex";
+          document.body.style.overflow = "auto";
+        } else {
+          localStorage.removeItem("kvm_password");
+          if(!isAuto) {
+            errorDiv.style.display = "block";
+            document.getElementById('passInput').value = "";
+          }
+        }
+      })
+      .catch(err => {
+        if(!isAuto) {
+          errorDiv.innerText = "Connection Error!";
+          errorDiv.style.display = "block";
+        }
+      });
+    }
+
+    window.onload = detectNetwork;
+
+    // ==========================================
+    // إرسال الأوامر والوظائف الأساسية
+    // ==========================================
+    function triggerEffect(el) {
+      el.classList.add('clicked'); setTimeout(() => el.classList.remove('clicked'), 150);
+    }
+
+    function sendCmd(type, val) {
+      fetch(ACTIVE_URL + "/set_command", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+        body: JSON.stringify({ type: type, val: val })
+      }).catch(err => console.log(err));
+    }
+
+    let isDragging = false;
+    function toggleDrag() {
+      isDragging = !isDragging;
+      let btn = document.getElementById('dragBtn');
+      btn.innerText = isDragging ? "Drag: ON" : "Drag: OFF";
+      btn.classList.toggle('active', isDragging);
+      sendCmd('drag', isDragging ? "1" : "-1"); // -1 تم التعديل هنا لعدم التعارض
+    }
+
+    function toggleMod(btn, code) {
+      btn.classList.toggle('active');
+      sendCmd('mod', `${code},${btn.classList.contains('active') ? 1 : 0}`);
+    }
+
+    function releaseAll() {
+      isDragging = false;
+      document.getElementById('dragBtn').innerText = "Drag: OFF";
+      document.querySelectorAll('.active').forEach(b => b.classList.remove('active'));
+      sendCmd('release', '1');
+    }
+
+    function sendText() {
+      let textInput = document.getElementById('textInput');
+      let text = textInput.value;
+      if(text !== "") { 
+        sendCmd('text', text); 
+        textInput.value = ''; 
+      }
+    }
+
+    // ==========================================
+    // التحكم المشترك (تاتش الموبايل + الماوس البلوتوث)
+    // ==========================================
+    let trackpad = document.getElementById('trackpad');
+    let moveTimeout = null, accumulatedDx = 0, accumulatedDy = 0;
+    let lastX = 0, lastY = 0;
+    let isPointerLocked = false;
+
+    // 1. التعامل مع التاتش (بصباعك على الشاشة)
+    trackpad.addEventListener('touchstart', (e) => {
+      lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+    });
+
+    trackpad.addEventListener('touchmove', (e) => {
+      accumulatedDx += Math.round((e.touches[0].clientX - lastX) * 1.2);
+      accumulatedDy += Math.round((e.touches[0].clientY - lastY) * 1.2);
+      lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+
+      if (!moveTimeout) {
+        moveTimeout = setTimeout(() => {
+          if (Math.abs(accumulatedDx) > 0 || Math.abs(accumulatedDy) > 0) {
+            sendCmd('move', `${accumulatedDx},${accumulatedDy}`);
+            accumulatedDx = 0; accumulatedDy = 0;
+          }
+          moveTimeout = null;
+        }, 40);
+      }
+      e.preventDefault();
+    }, { passive: false });
+
+    // 2. التعامل مع الماوس البلوتوث (Pointer Lock)
+    trackpad.addEventListener('click', () => {
+      trackpad.requestPointerLock = trackpad.requestPointerLock || trackpad.webkitRequestPointerLock;
+      if(trackpad.requestPointerLock) trackpad.requestPointerLock();
+    });
+
+    document.addEventListener('pointerlockchange', () => {
+      isPointerLocked = (document.pointerLockElement === trackpad);
+      if (isPointerLocked) {
+        document.getElementById('netStatus').innerHTML = "🔒 Mouse Locked";
+        document.getElementById('netStatus').style.color = "#00b894";
+      } else {
+        document.getElementById('netStatus').innerHTML = "🟢 Local / Remote";
+        document.getElementById('netStatus').style.color = "white";
+      }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (isPointerLocked) {
+        accumulatedDx += Math.round(e.movementX * 1.2);
+        accumulatedDy += Math.round(e.movementY * 1.2);
+
+        if (!moveTimeout) {
+          moveTimeout = setTimeout(() => {
+            if (Math.abs(accumulatedDx) > 0 || Math.abs(accumulatedDy) > 0) {
+              sendCmd('move', `${accumulatedDx},${accumulatedDy}`);
+              accumulatedDx = 0; accumulatedDy = 0;
+            }
+            moveTimeout = null;
+          }, 30);
+        }
+      }
+    });
+
+    document.addEventListener('mousedown', (e) => {
+      if (isPointerLocked) {
+        if (e.button === 0) sendCmd('drag', '1'); // كليك شمال
+        else if (e.button === 2) sendCmd('click', 'R'); // كليك يمين
+      }
+    });
+
+    document.addEventListener('mouseup', (e) => {
+      if (isPointerLocked && e.button === 0) {
+        sendCmd('drag', '-1'); // رفع إصبع الكليك الشمال
+      }
+    });
+
+    document.addEventListener('wheel', (e) => {
+      if (isPointerLocked) {
+        if (e.deltaY > 0) sendCmd('scroll', '-3');
+        else sendCmd('scroll', '3');
+      }
+    }, { passive: true });
+
+    document.addEventListener('contextmenu', (e) => {
+      if (isPointerLocked) e.preventDefault(); 
+    });
+
+    // 3. التقاط أزرار الكيبورد البلوتوث
+    window.addEventListener('keydown', (e) => {
+      if (isPointerLocked) {
+        e.preventDefault(); 
+        
+        if (e.key === "Escape") {
+          document.exitPointerLock(); 
+          return;
+        }
+
+        if (e.key.length === 1) {
+          sendCmd('text', e.key); 
+        } else {
+          let keyCode = getHIDKeyCode(e.key);
+          if (keyCode > 0) sendCmd('key', keyCode.toString());
+        }
+      }
+    });
+
+    function getHIDKeyCode(key) {
+      switch(key) {
+        case 'Enter': return 176;
+        case 'Backspace': return 178;
+        case 'Tab': return 179;
+        case 'ArrowUp': return 218;
+        case 'ArrowDown': return 217;
+        case 'ArrowLeft': return 216;
+        case 'ArrowRight': return 215;
+        case 'Delete': return 212;
+        default: return 0;
+      }
+    }
+  </script>
+</body>
+</html>
