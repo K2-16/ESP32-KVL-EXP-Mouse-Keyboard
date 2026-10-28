@@ -2,125 +2,176 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-  <title>Batch-Queue KVM Pro</title>
+  <title>KVM Pro - Ultimate Edition</title>
   <style>
     * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 8px; background-color: #121212; color: white; display: flex; flex-direction: column; min-height: 100vh; overflow: hidden; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 8px; background-color: #0f111a; color: #ffffff; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
     
-    #lockScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-    .login-card { background: #1e1e1e; padding: 30px; border-radius: 12px; border: 1px solid #333; width: 100%; max-width: 350px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
-    .login-card h2 { color: #00d2ff; margin-bottom: 20px; font-size: 24px; }
-    #passInput { font-size: 18px; text-align: center; padding: 12px; width: 100%; border-radius: 6px; border: 2px solid #444; background: #2a2a2a; color: white; margin-bottom: 15px; outline: none; transition: 0.2s; }
+    /* Login Screen */
+    #lockScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f111a; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    .login-card { background: #1a1c29; padding: 30px; border-radius: 14px; border: 1px solid #2a2d42; width: 100%; max-width: 350px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+    .login-card h2 { color: #00d2ff; margin-bottom: 20px; font-size: 22px; }
+    #passInput { font-size: 16px; text-align: center; padding: 12px; width: 100%; border-radius: 8px; border: 2px solid #333852; background: #12141f; color: white; margin-bottom: 15px; outline: none; }
     #passInput:focus { border-color: #00d2ff; }
-    #loginBtn { padding: 12px; width: 100%; font-size: 16px; font-weight: bold; background: #0078d4; border: none; border-radius: 6px; color: white; cursor: pointer; transition: 0.2s; }
-    #loginBtn:active { background: #005a9e; }
-    #loginError { color: #ff4757; margin-top: 12px; font-size: 14px; font-weight: bold; display: none; }
+    #loginBtn { padding: 12px; width: 100%; font-size: 16px; font-weight: bold; background: #0078d4; border: none; border-radius: 8px; color: white; cursor: pointer; }
+    #loginError { color: #ff4757; margin-top: 12px; font-size: 13px; font-weight: bold; display: none; }
     
-    #topBar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 0 5px; }
-    .status-group { display: flex; align-items: center; gap: 6px; }
-    #netStatus { font-size: 12px; font-weight: bold; background: #222; padding: 4px 8px; border-radius: 4px; border: 1px solid #444; }
-    #refreshBtn { font-size: 12px; font-weight: bold; background: #333; color: #00d2ff; padding: 4px 8px; border-radius: 4px; border: 1px solid #00d2ff; cursor: pointer; }
+    /* Top Bar */
+    #topBar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 4px 8px; background: #161925; border-radius: 8px; border: 1px solid #25283d; }
+    .status-group { display: flex; align-items: center; gap: 8px; }
+    #netStatus { font-size: 11px; font-weight: bold; background: #222638; padding: 4px 8px; border-radius: 4px; color: #00d2ff; }
+    #refreshBtn { font-size: 11px; font-weight: bold; background: #25283d; color: #fff; padding: 4px 8px; border-radius: 4px; border: none; cursor: pointer; }
     
-    #trackpad { height: 160px; min-height: 160px; background-color: #2a2a2a; border-radius: 10px; margin-bottom: 8px; touch-action: none; border: 2px solid #00d2ff; display: flex; align-items: center; justify-content: center; color: #555; font-size: 14px; outline: none; cursor: crosshair;}
+    /* Trackpad */
+    #trackpad { height: 130px; min-height: 130px; background-color: #161925; border-radius: 10px; margin-bottom: 8px; touch-action: none; border: 2px dashed #00d2ff; display: flex; align-items: center; justify-content: center; color: #8a92b2; font-size: 13px; font-weight: 600; outline: none; cursor: crosshair; text-align: center; padding: 0 10px; }
     
-    .row { display: flex; gap: 6px; margin-bottom: 8px; width: 100%; }
-    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; margin-bottom: 8px; }
-    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; margin-bottom: 8px; }
+    /* Layout Grids & Rows */
+    .row { display: flex; gap: 6px; margin-bottom: 6px; width: 100%; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; margin-bottom: 6px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; margin-bottom: 6px; }
+    .grid-6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; width: 100%; margin-bottom: 6px; }
     
-    .btn { padding: 12px 5px; font-size: 14px; font-weight: bold; cursor: pointer; border: none; border-radius: 6px; background-color: #333; color: white; transition: 0.05s; display: flex; align-items: center; justify-content: center; }
-    .btn:active, .btn.clicked { background-color: #666; transform: scale(0.96); }
+    .btn { padding: 10px 4px; font-size: 12px; font-weight: bold; cursor: pointer; border: none; border-radius: 6px; background-color: #222638; color: white; transition: 0.1s; display: flex; align-items: center; justify-content: center; user-select: none; }
+    .btn:active, .btn.clicked { background-color: #383d59; transform: scale(0.96); }
     
     .btn-left { border-bottom: 3px solid #ff4757; }
     .btn-right { border-bottom: 3px solid #2ed573; }
-    .btn-drag { border-bottom: 3px solid #feca57; background-color: #444; }
+    .btn-drag { border-bottom: 3px solid #feca57; background-color: #2a2e43; }
     .btn-drag.active { background-color: #feca57; color: black; }
     .btn-scroll { background-color: #0096c7; border-bottom: 3px solid #00b4d8; }
     
-    .key-btn { padding: 12px 5px; font-size: 13px; background-color: #444; border: none; border-radius: 6px; color: white; font-weight: bold; transition: 0.05s; cursor: pointer; user-select: none; }
+    /* Screen Modifiers */
+    .mod-screen-btn { background-color: #2a2e43; border-bottom: 3px solid #7158e2; font-size: 11px; }
+    .mod-screen-btn.active { background-color: #7158e2 !important; color: white !important; font-weight: bold; }
+    
+    /* Key Buttons */
+    .key-btn { padding: 10px 4px; font-size: 12px; background-color: #222638; border: none; border-radius: 6px; color: white; font-weight: bold; transition: 0.1s; cursor: pointer; user-select: none; text-align: center; }
     .key-btn:active, .key-btn.clicked { background-color: #00d2ff; color: black; transform: scale(0.95); }
-    .key-btn.active { background-color: #00d2ff !important; color: black !important; border-bottom: 3px solid #0096c7; font-weight: 900; }
     
-    #textInput { flex: 1; height: 60px; min-height: 60px; padding: 10px; font-size: 16px; font-weight: bold; border-radius: 6px; border: 2px solid #00d2ff; outline: none; background-color: #1a1a1a; color: #00d2ff; resize: vertical; transition: 0.2s; }
-    #textInput::placeholder { color: #555; }
+    /* Analog Pad */
+    .analog-pad { display: grid; grid-template-areas: ". a-up ." "a-left a-down a-right"; gap: 6px; width: 100%; margin-bottom: 6px; background: #161925; padding: 8px; border-radius: 8px; border: 1px dashed #333852; }
+    .a-up { grid-area: a-up; background-color: #e67e22; } 
+    .a-down { grid-area: a-down; background-color: #e67e22; } 
+    .a-left { grid-area: a-left; background-color: #e67e22; } 
+    .a-right { grid-area: a-right; background-color: #e67e22; }
+    .analog-title { text-align: center; font-size: 11px; color: #8a92b2; margin-bottom: 4px; grid-column: span 3; font-weight: bold; }
+
+    /* D-Pad */
+    .d-pad { display: grid; grid-template-areas: ". up ." "left down right"; gap: 6px; flex: 1; }
+    .up { grid-area: up; } .down { grid-area: down; } .left { grid-area: left; } .right { grid-area: right; }
     
-    #appContent { display: none; flex-direction: column; height: 100%; overflow-y: auto; padding-bottom: 20px;}
+    #textInput { flex: 1; height: 45px; min-height: 45px; padding: 8px; font-size: 14px; font-weight: bold; border-radius: 6px; border: 2px solid #00d2ff; outline: none; background-color: #12141f; color: #00d2ff; resize: none; }
+    #textInput::placeholder { color: #555870; font-size: 12px; }
+    
+    #appContent { display: none; flex-direction: column; height: 100%; overflow-y: auto; padding-bottom: 20px; }
     #hiddenKeyCatcher { position: absolute; top: -9999px; left: -9999px; opacity: 0; width: 1px; height: 1px; }
   </style>
 </head>
 <body>
 
+  <!-- Login Overlay -->
   <div id="lockScreen">
     <div class="login-card">
       <h2>🔐 Secure KVM</h2>
       <input type="password" id="passInput" placeholder="Enter Password" onkeypress="if(event.key === 'Enter') verifyPassword()">
       <button id="loginBtn" onclick="verifyPassword()">Login</button>
-      <div id="loginError">❌ Wrong Password! Try Again.</div>
+      <div id="loginError">❌ Wrong Password!</div>
     </div>
   </div>
 
+  <!-- Main Interface -->
   <div id="appContent">
     <input type="text" id="hiddenKeyCatcher" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
 
     <div id="topBar">
-      <div style="font-size: 16px; font-weight: bold; color: #00d2ff;">KVM Pro (Batch Engine)</div>
+      <div style="font-size: 13px; font-weight: bold; color: #00d2ff;">⚡ KVM Pro Ultimate</div>
       <div class="status-group">
         <button id="refreshBtn" onclick="location.reload()">🔄 Refresh</button>
-        <div id="netStatus">⏳ Ready</div>
+        <div id="netStatus">🟢 Ready</div>
       </div>
     </div>
 
-    <div id="trackpad" tabindex="0">Touch or Click here to Lock Mouse & Keyboard</div>
+    <!-- Trackpad area -->
+    <div id="trackpad" tabindex="0">👉 Click here to Lock Control 👈</div>
     
+    <!-- Mouse Clicks & Drag -->
     <div class="grid-3">
-      <button class="btn btn-left" onclick="triggerEffect(this); sendCmd('click', 'L')">Left</button>
+      <button class="btn btn-left" onclick="triggerEffect(this); sendCmd('click', 'L')">Left Click</button>
       <button id="dragBtn" class="btn btn-drag" onclick="toggleDrag()">Drag: OFF</button>
-      <button class="btn btn-right" onclick="triggerEffect(this); sendCmd('click', 'R')">Right</button>
+      <button class="btn btn-right" onclick="triggerEffect(this); sendCmd('click', 'R')">Right Click</button>
     </div>
 
-    <div class="row">
-      <button class="btn btn-scroll" style="flex:1;" onclick="triggerEffect(this); sendCmd('scroll', '3')">Scroll ⬆️</button>
-      <button class="btn btn-scroll" style="flex:1;" onclick="triggerEffect(this); sendCmd('scroll', '-3')">Scroll ⬇️</button>
-    </div>
-
-    <div class="row">
-      <textarea id="textInput" placeholder="اكتب هنا.. وسيتم إرسال النص مجمعاً وسريعاً جداً"></textarea>
-      <button class="btn btn-send" style="background:#007bff; padding:0 15px; border-radius:6px; font-weight:bold; border:none; color:white;" onclick="triggerEffect(this); sendTextDirect()">Send Text</button>
-    </div>
-
-    <div class="row">
-      <button class="btn" style="flex:1; background:#0984e3;" onclick="triggerEffect(this); sendCmd('copy', '1')">📋 Copy</button>
-      <button class="btn" style="flex:1; background:#00b894;" onclick="triggerEffect(this); sendCmd('paste', '1')">📝 Paste</button>
-      <button class="btn" style="flex:1; background:#e17055;" onclick="triggerEffect(this); sendCmd('undo', '1')">↩️ Undo</button>
-    </div>
-
+    <!-- Screen Modifiers (For Android fallback shortcuts) -->
     <div class="grid-4">
-      <button class="key-btn mod-btn" onclick="toggleMod(this, 128)">Ctrl</button>
-      <button class="key-btn mod-btn" onclick="toggleMod(this, 130)">Alt</button>
-      <button class="key-btn mod-btn" onclick="toggleMod(this, 129)">Shift</button>
-      <button class="key-btn" style="background:#0078d4" onclick="triggerEffect(this); sendCmd('win', '1')">Win 🪟</button>
+      <button id="ctrlMod" class="btn mod-screen-btn" onclick="toggleScreenMod(128, this)">Ctrl (Lock)</button>
+      <button id="altMod" class="btn mod-screen-btn" onclick="toggleScreenMod(130, this)">Alt (Lock)</button>
+      <button id="shiftMod" class="btn mod-screen-btn" onclick="toggleScreenMod(129, this)">Shift (Lock)</button>
+      <button id="winMod" class="btn mod-screen-btn" onclick="toggleScreenMod(131, this)">Win (Lock)</button>
     </div>
 
-    <div class="grid-4">
-      <button class="key-btn" style="background:#8e44ad" onclick="triggerEffect(this); sendCmd('lang', '1')">Lang 🌐</button>
-      <button class="key-btn" style="background:#e1b12c; color:black;" onclick="triggerEffect(this); sendCmd('key', '193')">Caps</button>
-      <button class="key-btn" onclick="triggerEffect(this); sendCmd('altf4', '1')">Alt+F4</button>
-      <button class="key-btn" style="background:#d63031" onclick="triggerEffect(this); sendCmd('cad', '1')">CAD</button>
+    <!-- Macro Shortcuts -->
+    <div class="grid-6">
+      <button class="btn" style="background:#0984e3;" onclick="sendMacro([128, 99])">Ctrl+C</button>
+      <button class="btn" style="background:#00b894;" onclick="sendMacro([128, 118])">Ctrl+V</button>
+      <button class="btn" style="background:#e17055;" onclick="sendMacro([128, 97])">Ctrl+A</button>
+      <button class="btn" style="background:#6c5ce7;" onclick="sendMacro([128, 122])">Ctrl+Z</button>
+      <button class="btn" style="background:#d63031;" onclick="sendMacro([130, 179])">Alt+Tab</button>
+      <button class="btn" style="background:#e1b12c; color:black;" onclick="sendMacro([131, 100])">Win+D</button>
     </div>
 
-    <div class="grid-4">
-      <button class="key-btn" onclick="triggerEffect(this); sendCmd('key', '177')">ESC</button>
-      <button class="key-btn" onclick="triggerEffect(this); sendCmd('key', '212')">DEL</button>
-      <button class="key-btn" onclick="triggerEffect(this); sendCmd('key', '178')">B-Space</button>
-      <button class="key-btn" style="background:#28a745" onclick="triggerEffect(this); sendCmd('key', '176')">Enter</button>
+    <!-- Analog Mouse Movement Pad -->
+    <div class="analog-pad">
+      <div class="analog-title">Mouse Analog Movement Pad</div>
+      <button class="key-btn a-up" onpointerdown="sendCmd('joy', '0,-5')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-UP ⬆️</button>
+      <button class="key-btn a-left" onpointerdown="sendCmd('joy', '-5,0')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-LFT ⬅️</button>
+      <button class="key-btn a-down" onpointerdown="sendCmd('joy', '0,5')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-DN ⬇️</button>
+      <button class="key-btn a-right" onpointerdown="sendCmd('joy', '5,0')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-RGT ➡️</button>
     </div>
 
+    <!-- Scroll Buttons -->
     <div class="row">
-      <button class="key-btn key-clr" style="flex: 0.5;" onclick="triggerEffect(this); releaseAll()">CLR All</button>
+      <button class="btn btn-scroll" style="flex:1;" onclick="sendCmd('scroll', '3')">Scroll ⬆️</button>
+      <button class="btn btn-scroll" style="flex:1;" onclick="sendCmd('scroll', '-3')">Scroll ⬇️</button>
+    </div>
+
+    <!-- Text Typing Area -->
+    <div class="row">
+      <textarea id="textInput" placeholder="Type here for batch live queue streaming..."></textarea>
+      <button class="btn" style="background:#0078d4; width:80px; font-weight:bold;" onclick="sendTextDirect()">Send</button>
+    </div>
+
+    <!-- Clipboard & Special Actions -->
+    <div class="row">
+      <button class="btn" style="flex:1; background:#0984e3;" onclick="sendCmd('copy', '1')">📋 Copy</button>
+      <button class="btn" style="flex:1; background:#00b894;" onclick="sendCmd('paste', '1')">📝 Paste</button>
+      <button class="btn" style="flex:1; background:#e17055;" onclick="sendCmd('undo', '1')">↩️ Undo</button>
+      <button class="btn" style="flex:1; background:#d63031;" onclick="sendCmd('cad', '1')">CAD</button>
+    </div>
+
+    <!-- Functional Keys Grid 1 -->
+    <div class="grid-4">
+      <button class="key-btn" style="background:#8e44ad" onclick="sendCmd('lang', '1')">Lang 🌐</button>
+      <button class="key-btn" style="background:#e1b12c; color:black;" onclick="sendCmd('key', '193')">Caps</button>
+      <button class="key-btn" onclick="sendCmd('altf4', '1')">Alt+F4</button>
+      <button class="key-btn" onclick="sendCmd('key', '177')">ESC</button>
+    </div>
+
+    <!-- Functional Keys Grid 2 -->
+    <div class="grid-4">
+      <button class="key-btn" onclick="sendCmd('key', '212')">DEL</button>
+      <button class="key-btn" onclick="sendCmd('key', '178')">B-Space</button>
+      <button class="key-btn" onclick="sendCmd('key', '198')">F5</button>
+      <button class="key-btn" style="background:#28a745" onclick="sendCmd('key', '176')">Enter</button>
+    </div>
+
+    <!-- Clear All & D-Pad Arrows -->
+    <div class="row">
+      <button class="key-btn key-clr" style="flex: 0.5; background:#c0392b;" onclick="releaseAll()">CLR All</button>
       <div class="d-pad">
-        <button class="key-btn up" onclick="triggerEffect(this); sendCmd('key', '218')">UP</button>
-        <button class="key-btn left" onclick="triggerEffect(this); sendCmd('key', '216')">LT</button>
-        <button class="key-btn down" onclick="triggerEffect(this); sendCmd('key', '217')">DN</button>
-        <button class="key-btn right" onclick="triggerEffect(this); sendCmd('key', '215')">RT</button>
+        <button class="key-btn up" onclick="sendCmd('key', '218')">UP</button>
+        <button class="key-btn left" onclick="sendCmd('key', '216')">LT</button>
+        <button class="key-btn down" onclick="sendCmd('key', '217')">DN</button>
+        <button class="key-btn right" onclick="sendCmd('key', '215')">RT</button>
       </div>
     </div>
   </div>
@@ -145,43 +196,27 @@
       let pwd = isAuto ? userPassword : document.getElementById('passInput').value;
       let errorDiv = document.getElementById('loginError');
       if (pwd === "") return;
-
-      fetch(ACTIVE_URL + "/login", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
-        body: JSON.stringify({ password: pwd })
-      })
+      fetch(ACTIVE_URL + "/login", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pwd }) })
       .then(res => {
         if (res.status === 200) {
-          userPassword = pwd;
-          localStorage.setItem("kvm_password", pwd);
+          userPassword = pwd; localStorage.setItem("kvm_password", pwd);
           document.getElementById('lockScreen').style.display = "none";
           document.getElementById('appContent').style.display = "flex";
-          document.body.style.overflow = "auto";
         } else {
           localStorage.removeItem("kvm_password");
-          if(!isAuto) { errorDiv.style.display = "block"; document.getElementById('passInput').value = ""; }
+          if(!isAuto) errorDiv.style.display = "block";
         }
-      })
-      .catch(err => {
-        if(!isAuto) { errorDiv.innerText = "Connection Error!"; errorDiv.style.display = "block"; }
-      });
+      }).catch(err => { if(!isAuto) errorDiv.style.display = "block"; });
     }
-
     window.onload = detectNetwork;
 
-    function triggerEffect(el) { el.classList.add('clicked'); setTimeout(() => el.classList.remove('clicked'), 150); }
-
-    // ==========================================
-    // 🧠 نظام التجميع الذكي للطابور (Batch-Queue Engine)
-    // ==========================================
+    // Batch-Queue Engine
     let requestQueue = [];
     let isSending = false;
-    let textBuffer = ""; // مجمع الحروف السريعة
+    let textBuffer = "";
     let batchTimer = null;
 
     function sendCmd(type, val) {
-      // لو الأمر نص (كتابة حية)، نجمعه في Buffer بدل ما نعمل طلب منفصل لكل حرف
       if (type === 'text') {
         textBuffer += val;
         if (!batchTimer) {
@@ -192,19 +227,20 @@
               processQueue();
             }
             batchTimer = null;
-          }, 25); // تجميع الحروف كل 25 ملي ثانية (سرعة صاروخية وبدون زحمة في النت)
+          }, 20);
         }
         return;
       }
-
-      // باقي الأوامر (مفاتيح، ماوس، كليكات) تتدخل الطابور فوراً
       requestQueue.push({ type: type, val: val });
       processQueue();
     }
 
+    function sendMacro(keysArray) {
+      sendCmd('combo', keysArray.join(','));
+    }
+
     function processQueue() {
       if (isSending || requestQueue.length === 0) return;
-
       isSending = true;
       let currentReq = requestQueue.shift();
 
@@ -213,15 +249,25 @@
         headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
         body: JSON.stringify({ type: currentReq.type, val: currentReq.val })
       })
-      .then(res => {
-        isSending = false;
-        processQueue();
-      })
-      .catch(err => {
+      .then(() => { isSending = false; processQueue(); })
+      .catch(() => {
         requestQueue.unshift(currentReq);
         isSending = false;
         setTimeout(processQueue, 300);
       });
+    }
+
+    let activeScreenMods = new Set();
+    function toggleScreenMod(code, btn) {
+      if (activeScreenMods.has(code)) {
+        activeScreenMods.delete(code);
+        btn.classList.remove('active');
+        sendCmd('mod', `${code},0`);
+      } else {
+        activeScreenMods.add(code);
+        btn.classList.add('active');
+        sendCmd('mod', `${code},1`);
+      }
     }
 
     let isDragging = false;
@@ -233,42 +279,28 @@
       sendCmd('drag', isDragging ? "1" : "-1"); 
     }
 
-    function toggleMod(btn, code) {
-      btn.classList.toggle('active');
-      sendCmd('mod', `${code},${btn.classList.contains('active') ? 1 : 0}`);
-    }
-
     function releaseAll() {
       isDragging = false;
+      activeScreenMods.clear();
+      document.querySelectorAll('.mod-screen-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('dragBtn').innerText = "Drag: OFF";
       document.querySelectorAll('.active').forEach(b => b.classList.remove('active'));
       sendCmd('release', '1');
     }
 
     function sendTextDirect() {
-      let textInput = document.getElementById('textInput');
-      let text = textInput.value;
-      if(text !== "") { 
-        sendCmd('text', text); 
-        textInput.value = ''; 
-      }
+      let ti = document.getElementById('textInput');
+      if(ti.value !== "") { sendCmd('text', ti.value); ti.value = ''; }
     }
 
-    // ==========================================
-    // التحكم والماوس
-    // ==========================================
-    let trackpad = document.getElementById('trackpad');
-    let hiddenCatcher = document.getElementById('hiddenKeyCatcher');
-    let moveTimeout = null, accumulatedDx = 0, accumulatedDy = 0;
-    let isPointerLocked = false;
+    // Trackpad & Mouse Movement Engine
+    let trackpad = document.getElementById('trackpad'), hiddenCatcher = document.getElementById('hiddenKeyCatcher');
+    let isPointerLocked = false, moveTimeout = null, accDx = 0, accDy = 0, lastX = 0, lastY = 0;
 
-    trackpad.addEventListener('touchstart', (e) => {
-      lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
-    });
-
+    trackpad.addEventListener('touchstart', (e) => { lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; });
     trackpad.addEventListener('touchmove', (e) => {
-      accumulatedDx += Math.round((e.touches[0].clientX - lastX) * 1.5);
-      accumulatedDy += Math.round((e.touches[0].clientY - lastY) * 1.5);
+      accDx += Math.round((e.touches[0].clientX - lastX) * 1.5);
+      accDy += Math.round((e.touches[0].clientY - lastY) * 1.5);
       lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
       processMouseMovement();
       e.preventDefault();
@@ -276,131 +308,71 @@
 
     trackpad.addEventListener('click', () => {
       hiddenCatcher.focus();
-      trackpad.requestPointerLock = trackpad.requestPointerLock || trackpad.webkitRequestPointerLock;
       if(trackpad.requestPointerLock) trackpad.requestPointerLock();
-    });
-
-    hiddenCatcher.addEventListener('blur', () => {
-      if (isPointerLocked) hiddenCatcher.focus();
     });
 
     document.addEventListener('pointerlockchange', () => {
       isPointerLocked = (document.pointerLockElement === trackpad);
       if (isPointerLocked) {
-        document.getElementById('netStatus').innerHTML = "🔒 Batch Active";
-        document.getElementById('netStatus').style.color = "#00b894";
+        document.getElementById('netStatus').innerHTML = "🔒 Active";
+        trackpad.innerHTML = "🔥 Control Locked - Type Now!";
         hiddenCatcher.focus();
       } else {
-        document.getElementById('netStatus').innerHTML = "🟢 Local / Remote";
-        document.getElementById('netStatus').style.color = "white";
+        document.getElementById('netStatus').innerHTML = "🟢 Ready";
+        trackpad.innerHTML = "👉 Click here to Lock Control 👈";
         hiddenCatcher.blur();
       }
     });
 
     document.addEventListener('mousemove', (e) => {
-      if (isPointerLocked) {
-        accumulatedDx += (e.movementX * 2.5);
-        accumulatedDy += (e.movementY * 2.5);
-        processMouseMovement();
-      }
+      if (!isPointerLocked) return;
+      accDx += (e.movementX * 2.5); accDy += (e.movementY * 2.5);
+      processMouseMovement();
     });
 
     function processMouseMovement() {
       if (!moveTimeout) {
         moveTimeout = setTimeout(() => {
-          let sendX = Math.round(accumulatedDx);
-          let sendY = Math.round(accumulatedDy);
-          if (sendX > 100) sendX = 100; if (sendX < -100) sendX = -100;
-          if (sendY > 100) sendY = 100; if (sendY < -100) sendY = -100;
-          if (sendX !== 0 || sendY !== 0) { 
-            sendCmd('move', `${sendX},${sendY}`); 
-            accumulatedDx -= sendX; 
-            accumulatedDy -= sendY; 
-          } else { 
-            accumulatedDx = 0; 
-            accumulatedDy = 0; 
-          }
+          let sx = Math.round(accDx), sy = Math.round(accDy);
+          if(sx>100)sx=100; if(sx<-100)sx=-100; if(sy>100)sy=100; if(sy<-100)sy=-100;
+          if (sx!==0 || sy!==0) { sendCmd('move', `${sx},${sy}`); accDx-=sx; accDy-=sy; } else { accDx=0; accDy=0; }
           moveTimeout = null;
         }, 15); 
       }
     }
 
-    document.addEventListener('mousedown', (e) => {
-      if (isPointerLocked) {
-        if (e.button === 0) sendCmd('drag', '1');
-        else if (e.button === 2) sendCmd('click', 'R');
-      }
-    });
+    document.addEventListener('mousedown', (e) => { if (isPointerLocked) { if(e.button===0)sendCmd('drag','1'); else if(e.button===2)sendCmd('click','R'); } });
+    document.addEventListener('mouseup', (e) => { if (isPointerLocked && e.button===0) sendCmd('drag','-1'); });
+    document.addEventListener('wheel', (e) => { if(isPointerLocked) { if(e.deltaY>0)sendCmd('scroll','-3'); else sendCmd('scroll','3'); } }, {passive:true});
+    document.addEventListener('contextmenu', e => { if(isPointerLocked) e.preventDefault(); });
 
-    document.addEventListener('mouseup', (e) => {
-      if (isPointerLocked && e.button === 0) {
-        sendCmd('drag', '-1');
-      }
-    });
-
-    document.addEventListener('wheel', (e) => {
-      if (isPointerLocked) {
-        if (e.deltaY > 0) sendCmd('scroll', '-3');
-        else sendCmd('scroll', '3');
-      }
-    }, { passive: true });
-
-    document.addEventListener('contextmenu', (e) => {
-      if (isPointerLocked) e.preventDefault(); 
-    });
-
-    // ==========================================
-    // ⌨️ معالجة الكيبورد واختصارات النظام (منع تداخل الموبايل)
-    // ==========================================
+    // Live Keyboard Catching Engine
     hiddenCatcher.addEventListener('keydown', (e) => {
       if (isPointerLocked) {
-        // منع أندرويد من تنفيذ الاختصارات الخاصة به ونقلها بالكامل للكمبيوتر
-        e.preventDefault(); 
-        e.stopPropagation();
+        e.preventDefault(); e.stopPropagation();
+        if (e.key === "Escape") { document.exitPointerLock(); sendCmd('key', '177'); return; }
         
-        if (e.key === "Escape") {
-          document.exitPointerLock(); 
-          sendCmd('key', '177');
-          return;
+        if (e.key.length === 1) {
+          sendCmd('text', e.key);
+        } else {
+          let code = getHIDCode(e.code);
+          if (code > 0) sendCmd('key', code.toString());
         }
-
-        let hidCode = getFullHIDKeyCode(e);
-
-        if (hidCode > 0) {
-          sendCmd('key', hidCode.toString());
-        } else if (e.key.length === 1) {
-          sendCmd('text', e.key); // يذهب للـ Batch Buffer ويرسل بانتظام
-        }
-        
         hiddenCatcher.value = '';
       }
-    }, true); // استخدام capture phase لضمان التقاط الحدث قبل الموبايل
+    }, true);
 
-    function getFullHIDKeyCode(e) {
-      switch(e.code) {
-        case 'ControlLeft': case 'ControlRight': return 128; 
-        case 'ShiftLeft': case 'ShiftRight': return 129;     
-        case 'AltLeft': case 'AltRight': return 130;         
-        case 'MetaLeft': case 'MetaRight': return 131;       
+    function getHIDCode(code) {
+      switch(code) {
         case 'Enter': return 176;
         case 'Escape': return 177;
         case 'Backspace': return 178;
         case 'Tab': return 179;
         case 'Delete': return 212;
-        case 'Insert': return 209;
-        case 'Home': return 210;
-        case 'End': return 213;
-        case 'PageUp': return 211;
-        case 'PageDown': return 214;
-        case 'ArrowUp': return 218;
-        case 'ArrowDown': return 217;
-        case 'ArrowLeft': return 216;
-        case 'ArrowRight': return 215;
-        case 'CapsLock': return 193;
+        case 'ArrowUp': return 218; case 'ArrowDown': return 217;
+        case 'ArrowLeft': return 216; case 'ArrowRight': return 215;
         case 'F1': return 194; case 'F2': return 195; case 'F3': return 196;
-        case 'F4': return 197; case 'F5': return 198; case 'F6': return 199;
-        case 'F7': return 200; case 'F8': return 201; case 'F9': return 202;
-        case 'F10': return 203; case 'F11': return 204; case 'F12': return 205;
+        case 'F4': return 197; case 'F5': return 198; case 'F12': return 205;
         default: return 0;
       }
     }
