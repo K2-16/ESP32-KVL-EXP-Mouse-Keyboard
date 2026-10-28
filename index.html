@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-  <title>Full-Mapped Queue KVM Pro</title>
+  <title>Batch-Queue KVM Pro</title>
   <style>
     * { box-sizing: border-box; }
     body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 8px; background-color: #121212; color: white; display: flex; flex-direction: column; min-height: 100vh; overflow: hidden; }
@@ -38,6 +38,7 @@
     
     .key-btn { padding: 12px 5px; font-size: 13px; background-color: #444; border: none; border-radius: 6px; color: white; font-weight: bold; transition: 0.05s; cursor: pointer; user-select: none; }
     .key-btn:active, .key-btn.clicked { background-color: #00d2ff; color: black; transform: scale(0.95); }
+    .key-btn.active { background-color: #00d2ff !important; color: black !important; border-bottom: 3px solid #0096c7; font-weight: 900; }
     
     #textInput { flex: 1; height: 60px; min-height: 60px; padding: 10px; font-size: 16px; font-weight: bold; border-radius: 6px; border: 2px solid #00d2ff; outline: none; background-color: #1a1a1a; color: #00d2ff; resize: vertical; transition: 0.2s; }
     #textInput::placeholder { color: #555; }
@@ -61,10 +62,10 @@
     <input type="text" id="hiddenKeyCatcher" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
 
     <div id="topBar">
-      <div style="font-size: 16px; font-weight: bold; color: #00d2ff;">KVM Pro (Full Mapped)</div>
+      <div style="font-size: 16px; font-weight: bold; color: #00d2ff;">KVM Pro (Batch Engine)</div>
       <div class="status-group">
         <button id="refreshBtn" onclick="location.reload()">🔄 Refresh</button>
-        <div id="netStatus">⏳ Queue Ready</div>
+        <div id="netStatus">⏳ Ready</div>
       </div>
     </div>
 
@@ -82,7 +83,7 @@
     </div>
 
     <div class="row">
-      <textarea id="textInput" placeholder="اكتب هنا.. وسيتم إرسال النص طلقة ورا طلقة بالترتيب وبدون فقدان أي حرف"></textarea>
+      <textarea id="textInput" placeholder="اكتب هنا.. وسيتم إرسال النص مجمعاً وسريعاً جداً"></textarea>
       <button class="btn btn-send" style="background:#007bff; padding:0 15px; border-radius:6px; font-weight:bold; border:none; color:white;" onclick="triggerEffect(this); sendTextDirect()">Send Text</button>
     </div>
 
@@ -172,12 +173,31 @@
     function triggerEffect(el) { el.classList.add('clicked'); setTimeout(() => el.classList.remove('clicked'), 150); }
 
     // ==========================================
-    // 🧠 نظام الطابور الذكي (Request Queue Engine)
+    // 🧠 نظام التجميع الذكي للطابور (Batch-Queue Engine)
     // ==========================================
     let requestQueue = [];
     let isSending = false;
+    let textBuffer = ""; // مجمع الحروف السريعة
+    let batchTimer = null;
 
     function sendCmd(type, val) {
+      // لو الأمر نص (كتابة حية)، نجمعه في Buffer بدل ما نعمل طلب منفصل لكل حرف
+      if (type === 'text') {
+        textBuffer += val;
+        if (!batchTimer) {
+          batchTimer = setTimeout(() => {
+            if (textBuffer.length > 0) {
+              requestQueue.push({ type: 'text', val: textBuffer });
+              textBuffer = "";
+              processQueue();
+            }
+            batchTimer = null;
+          }, 25); // تجميع الحروف كل 25 ملي ثانية (سرعة صاروخية وبدون زحمة في النت)
+        }
+        return;
+      }
+
+      // باقي الأوامر (مفاتيح، ماوس، كليكات) تتدخل الطابور فوراً
       requestQueue.push({ type: type, val: val });
       processQueue();
     }
@@ -200,7 +220,7 @@
       .catch(err => {
         requestQueue.unshift(currentReq);
         isSending = false;
-        setTimeout(processQueue, 500);
+        setTimeout(processQueue, 300);
       });
     }
 
@@ -267,7 +287,7 @@
     document.addEventListener('pointerlockchange', () => {
       isPointerLocked = (document.pointerLockElement === trackpad);
       if (isPointerLocked) {
-        document.getElementById('netStatus').innerHTML = "🔒 Full Mapped Active";
+        document.getElementById('netStatus').innerHTML = "🔒 Batch Active";
         document.getElementById('netStatus').style.color = "#00b894";
         hiddenCatcher.focus();
       } else {
@@ -330,11 +350,13 @@
     });
 
     // ==========================================
-    // ⌨️ المابنج الشامل لكل أزرار الكيبورد والـ Modifiers عبر الطابور
+    // ⌨️ معالجة الكيبورد واختصارات النظام (منع تداخل الموبايل)
     // ==========================================
     hiddenCatcher.addEventListener('keydown', (e) => {
       if (isPointerLocked) {
+        // منع أندرويد من تنفيذ الاختصارات الخاصة به ونقلها بالكامل للكمبيوتر
         e.preventDefault(); 
+        e.stopPropagation();
         
         if (e.key === "Escape") {
           document.exitPointerLock(); 
@@ -342,26 +364,24 @@
           return;
         }
 
-        // جدول مابنج كامل لأزرار الكيبورد الفيزيائي (أكواد USB HID الرسمية للأردوينو)
         let hidCode = getFullHIDKeyCode(e);
 
         if (hidCode > 0) {
           sendCmd('key', hidCode.toString());
         } else if (e.key.length === 1) {
-          sendCmd('text', e.key); // الحروف العادية تتدخل الطابور
+          sendCmd('text', e.key); // يذهب للـ Batch Buffer ويرسل بانتظام
         }
         
         hiddenCatcher.value = '';
       }
-    });
+    }, true); // استخدام capture phase لضمان التقاط الحدث قبل الموبايل
 
     function getFullHIDKeyCode(e) {
-      // التحقق من أزرار التحكم الخاصة (Modifiers & Special Keys)
       switch(e.code) {
-        case 'ControlLeft': case 'ControlRight': return 128; // Ctrl
-        case 'ShiftLeft': case 'ShiftRight': return 129;     // Shift
-        case 'AltLeft': case 'AltRight': return 130;         // Alt
-        case 'MetaLeft': case 'MetaRight': return 131;       // Windows Key
+        case 'ControlLeft': case 'ControlRight': return 128; 
+        case 'ShiftLeft': case 'ShiftRight': return 129;     
+        case 'AltLeft': case 'AltRight': return 130;         
+        case 'MetaLeft': case 'MetaRight': return 131;       
         case 'Enter': return 176;
         case 'Escape': return 177;
         case 'Backspace': return 178;
