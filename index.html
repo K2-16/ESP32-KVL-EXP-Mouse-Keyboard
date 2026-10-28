@@ -21,7 +21,8 @@
     #netStatus { font-size: 12px; font-weight: bold; background: #222; padding: 4px 8px; border-radius: 4px; border: 1px solid #444; }
     #refreshBtn { font-size: 12px; font-weight: bold; background: #333; color: #00d2ff; padding: 4px 8px; border-radius: 4px; border: 1px solid #00d2ff; cursor: pointer; }
     
-    #trackpad { height: 160px; min-height: 160px; background-color: #2a2a2a; border-radius: 10px; margin-bottom: 8px; touch-action: none; border: 2px solid #00d2ff; display: flex; align-items: center; justify-content: center; color: #555; font-size: 14px;}
+    /* ضفنا outline: none عشان ميعملش برواز لما ياخد Focus */
+    #trackpad { height: 160px; min-height: 160px; background-color: #2a2a2a; border-radius: 10px; margin-bottom: 8px; touch-action: none; border: 2px solid #00d2ff; display: flex; align-items: center; justify-content: center; color: #555; font-size: 14px; outline: none;}
     
     .row { display: flex; gap: 6px; margin-bottom: 8px; width: 100%; }
     .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; margin-bottom: 8px; }
@@ -74,8 +75,8 @@
       </div>
     </div>
 
-    <!-- مساحة التاتش / الماوس البلوتوث -->
-    <div id="trackpad">Touch or Click here to Lock Mouse</div>
+    <!-- ضفنا tabindex="0" عشان يقبل فوكس الكيبورد -->
+    <div id="trackpad" tabindex="0">Touch or Click here to Lock Mouse</div>
     
     <div class="grid-3">
       <button class="btn btn-left" onclick="triggerEffect(this); sendCmd('click', 'L')">Left</button>
@@ -140,9 +141,6 @@
   </div>
 
   <script>
-    // ==========================================
-    // إعدادات الاتصال والشبكة
-    // ==========================================
     const NGROK_BASE = "https://sharply-snarl-buckle.ngrok-free.dev";
     const LOCAL_BASE = "http://192.168.1.7:8080";
     let ACTIVE_URL = NGROK_BASE;
@@ -206,13 +204,7 @@
 
     window.onload = detectNetwork;
 
-    // ==========================================
-    // إرسال الأوامر والوظائف الأساسية
-    // ==========================================
-    function triggerEffect(el) {
-      el.classList.add('clicked'); setTimeout(() => el.classList.remove('clicked'), 150);
-    }
-
+    function triggerEffect(el) { el.classList.add('clicked'); setTimeout(() => el.classList.remove('clicked'), 150); }
     function sendCmd(type, val) {
       fetch(ACTIVE_URL + "/set_command", {
         method: 'POST',
@@ -227,7 +219,7 @@
       let btn = document.getElementById('dragBtn');
       btn.innerText = isDragging ? "Drag: ON" : "Drag: OFF";
       btn.classList.toggle('active', isDragging);
-      sendCmd('drag', isDragging ? "1" : "-1"); // -1 تم التعديل هنا لعدم التعارض
+      sendCmd('drag', isDragging ? "1" : "-1"); 
     }
 
     function toggleMod(btn, code) {
@@ -245,44 +237,33 @@
     function sendText() {
       let textInput = document.getElementById('textInput');
       let text = textInput.value;
-      if(text !== "") { 
-        sendCmd('text', text); 
-        textInput.value = ''; 
-      }
+      if(text !== "") { sendCmd('text', text); textInput.value = ''; }
     }
 
     // ==========================================
-    // التحكم المشترك (تاتش الموبايل + الماوس البلوتوث)
+    // التحكم المعالج للماوس والكيبورد (Optimized)
     // ==========================================
     let trackpad = document.getElementById('trackpad');
     let moveTimeout = null, accumulatedDx = 0, accumulatedDy = 0;
     let lastX = 0, lastY = 0;
     let isPointerLocked = false;
 
-    // 1. التعامل مع التاتش (بصباعك على الشاشة)
+    // 1. التاتش (بصباعك)
     trackpad.addEventListener('touchstart', (e) => {
       lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
     });
 
     trackpad.addEventListener('touchmove', (e) => {
-      accumulatedDx += Math.round((e.touches[0].clientX - lastX) * 1.2);
-      accumulatedDy += Math.round((e.touches[0].clientY - lastY) * 1.2);
+      accumulatedDx += Math.round((e.touches[0].clientX - lastX) * 1.5);
+      accumulatedDy += Math.round((e.touches[0].clientY - lastY) * 1.5);
       lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
-
-      if (!moveTimeout) {
-        moveTimeout = setTimeout(() => {
-          if (Math.abs(accumulatedDx) > 0 || Math.abs(accumulatedDy) > 0) {
-            sendCmd('move', `${accumulatedDx},${accumulatedDy}`);
-            accumulatedDx = 0; accumulatedDy = 0;
-          }
-          moveTimeout = null;
-        }, 40);
-      }
+      processMouseMovement();
       e.preventDefault();
     }, { passive: false });
 
-    // 2. التعامل مع الماوس البلوتوث (Pointer Lock)
+    // 2. تفعيل قفل الماوس وتفعيل تركيز الكيبورد
     trackpad.addEventListener('click', () => {
+      trackpad.focus(); // ⬅️ الحل السحري لتشغيل الكيبورد الخارجي
       trackpad.requestPointerLock = trackpad.requestPointerLock || trackpad.webkitRequestPointerLock;
       if(trackpad.requestPointerLock) trackpad.requestPointerLock();
     });
@@ -290,7 +271,7 @@
     document.addEventListener('pointerlockchange', () => {
       isPointerLocked = (document.pointerLockElement === trackpad);
       if (isPointerLocked) {
-        document.getElementById('netStatus').innerHTML = "🔒 Mouse Locked";
+        document.getElementById('netStatus').innerHTML = "🔒 Control Locked";
         document.getElementById('netStatus').style.color = "#00b894";
       } else {
         document.getElementById('netStatus').innerHTML = "🟢 Local / Remote";
@@ -298,33 +279,53 @@
       }
     });
 
+    // 3. الماوس الفيزيائي
     document.addEventListener('mousemove', (e) => {
       if (isPointerLocked) {
-        accumulatedDx += Math.round(e.movementX * 1.2);
-        accumulatedDy += Math.round(e.movementY * 1.2);
-
-        if (!moveTimeout) {
-          moveTimeout = setTimeout(() => {
-            if (Math.abs(accumulatedDx) > 0 || Math.abs(accumulatedDy) > 0) {
-              sendCmd('move', `${accumulatedDx},${accumulatedDy}`);
-              accumulatedDx = 0; accumulatedDy = 0;
-            }
-            moveTimeout = null;
-          }, 30);
-        }
+        // ضاعفنا سرعة وحساسية الماوس هنا
+        let mouseSensitivity = 2.5; 
+        accumulatedDx += (e.movementX * mouseSensitivity);
+        accumulatedDy += (e.movementY * mouseSensitivity);
+        processMouseMovement();
       }
     });
 
+    // معالجة دقيقة تمنع التقطيع (Anti-Chopping Engine)
+    function processMouseMovement() {
+      if (!moveTimeout) {
+        // قللنا الوقت لـ 15 ملي ثانية لاستجابة فورية جداً (Zero Lag)
+        moveTimeout = setTimeout(() => {
+          let sendX = Math.round(accumulatedDx);
+          let sendY = Math.round(accumulatedDy);
+          
+          // 🛑 حماية الـ Overflow: بما إن كود الأردوينو بيضرب في 1.2، أقصى رقم نبعته 100 عشان مايعديش 127 ويقطع
+          if (sendX > 100) sendX = 100;
+          if (sendX < -100) sendX = -100;
+          if (sendY > 100) sendY = 100;
+          if (sendY < -100) sendY = -100;
+
+          if (sendX !== 0 || sendY !== 0) {
+            sendCmd('move', `${sendX},${sendY}`);
+            accumulatedDx -= sendX; 
+            accumulatedDy -= sendY;
+          } else {
+            accumulatedDx = 0; accumulatedDy = 0;
+          }
+          moveTimeout = null;
+        }, 15); 
+      }
+    }
+
     document.addEventListener('mousedown', (e) => {
       if (isPointerLocked) {
-        if (e.button === 0) sendCmd('drag', '1'); // كليك شمال
-        else if (e.button === 2) sendCmd('click', 'R'); // كليك يمين
+        if (e.button === 0) sendCmd('drag', '1');
+        else if (e.button === 2) sendCmd('click', 'R');
       }
     });
 
     document.addEventListener('mouseup', (e) => {
       if (isPointerLocked && e.button === 0) {
-        sendCmd('drag', '-1'); // رفع إصبع الكليك الشمال
+        sendCmd('drag', '-1');
       }
     });
 
@@ -339,8 +340,9 @@
       if (isPointerLocked) e.preventDefault(); 
     });
 
-    // 3. التقاط أزرار الكيبورد البلوتوث
-    window.addEventListener('keydown', (e) => {
+    // 4. الكيبورد الفيزيائي (تعديل التقاط الأزرار)
+    // نقلنا المستمع (Listener) للـ document عشان نضمن إنه يلقط دايماً
+    document.addEventListener('keydown', (e) => {
       if (isPointerLocked) {
         e.preventDefault(); 
         
