@@ -2,10 +2,10 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-  <title>KVM Pro - Ultimate Edition</title>
+  <title>Clean KVM Pro</title>
   <style>
     * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 8px; background-color: #0f111a; color: #ffffff; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; background-color: #0f111a; color: #ffffff; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
     
     /* Login Screen */
     #lockScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f111a; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
@@ -17,21 +17,20 @@
     #loginError { color: #ff4757; margin-top: 12px; font-size: 13px; font-weight: bold; display: none; }
     
     /* Top Bar */
-    #topBar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 4px 8px; background: #161925; border-radius: 8px; border: 1px solid #25283d; }
+    #topBar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 6px 10px; background: #161925; border-radius: 8px; border: 1px solid #25283d; }
     .status-group { display: flex; align-items: center; gap: 8px; }
     #netStatus { font-size: 11px; font-weight: bold; background: #222638; padding: 4px 8px; border-radius: 4px; color: #00d2ff; }
     #refreshBtn { font-size: 11px; font-weight: bold; background: #25283d; color: #fff; padding: 4px 8px; border-radius: 4px; border: none; cursor: pointer; }
     
     /* Trackpad */
-    #trackpad { height: 130px; min-height: 130px; background-color: #161925; border-radius: 10px; margin-bottom: 8px; touch-action: none; border: 2px dashed #00d2ff; display: flex; align-items: center; justify-content: center; color: #8a92b2; font-size: 13px; font-weight: 600; outline: none; cursor: crosshair; text-align: center; padding: 0 10px; }
+    #trackpad { height: 160px; min-height: 160px; background-color: #161925; border-radius: 10px; margin-bottom: 10px; touch-action: none; border: 2px dashed #00d2ff; display: flex; align-items: center; justify-content: center; color: #8a92b2; font-size: 14px; font-weight: 600; outline: none; cursor: crosshair; text-align: center; padding: 0 10px; }
     
-    /* Layout Grids & Rows */
-    .row { display: flex; gap: 6px; margin-bottom: 6px; width: 100%; }
-    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; margin-bottom: 6px; }
-    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; margin-bottom: 6px; }
-    .grid-6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; width: 100%; margin-bottom: 6px; }
+    /* Layouts */
+    .row { display: flex; gap: 8px; margin-bottom: 8px; width: 100%; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; margin-bottom: 8px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; margin-bottom: 8px; }
     
-    .btn { padding: 10px 4px; font-size: 12px; font-weight: bold; cursor: pointer; border: none; border-radius: 6px; background-color: #222638; color: white; transition: 0.1s; display: flex; align-items: center; justify-content: center; user-select: none; }
+    .btn { padding: 12px 6px; font-size: 13px; font-weight: bold; cursor: pointer; border: none; border-radius: 8px; background-color: #222638; color: white; transition: 0.1s; display: flex; align-items: center; justify-content: center; user-select: none; }
     .btn:active, .btn.clicked { background-color: #383d59; transform: scale(0.96); }
     
     .btn-left { border-bottom: 3px solid #ff4757; }
@@ -40,28 +39,21 @@
     .btn-drag.active { background-color: #feca57; color: black; }
     .btn-scroll { background-color: #0096c7; border-bottom: 3px solid #00b4d8; }
     
-    /* Screen Modifiers */
-    .mod-screen-btn { background-color: #2a2e43; border-bottom: 3px solid #7158e2; font-size: 11px; }
-    .mod-screen-btn.active { background-color: #7158e2 !important; color: white !important; font-weight: bold; }
-    
-    /* Key Buttons */
-    .key-btn { padding: 10px 4px; font-size: 12px; background-color: #222638; border: none; border-radius: 6px; color: white; font-weight: bold; transition: 0.1s; cursor: pointer; user-select: none; text-align: center; }
+    .key-btn { padding: 12px 6px; font-size: 13px; background-color: #222638; border: none; border-radius: 8px; color: white; font-weight: bold; transition: 0.1s; cursor: pointer; user-select: none; text-align: center; }
     .key-btn:active, .key-btn.clicked { background-color: #00d2ff; color: black; transform: scale(0.95); }
     
-    /* Analog Pad */
-    .analog-pad { display: grid; grid-template-areas: ". a-up ." "a-left a-down a-right"; gap: 6px; width: 100%; margin-bottom: 6px; background: #161925; padding: 8px; border-radius: 8px; border: 1px dashed #333852; }
+    .analog-pad { display: grid; grid-template-areas: ". a-up ." "a-left a-down a-right"; gap: 8px; width: 100%; margin-bottom: 8px; background: #161925; padding: 10px; border-radius: 10px; border: 1px dashed #333852; }
     .a-up { grid-area: a-up; background-color: #e67e22; } 
     .a-down { grid-area: a-down; background-color: #e67e22; } 
     .a-left { grid-area: a-left; background-color: #e67e22; } 
     .a-right { grid-area: a-right; background-color: #e67e22; }
-    .analog-title { text-align: center; font-size: 11px; color: #8a92b2; margin-bottom: 4px; grid-column: span 3; font-weight: bold; }
+    .analog-title { text-align: center; font-size: 12px; color: #8a92b2; margin-bottom: 6px; grid-column: span 3; font-weight: bold; }
 
-    /* D-Pad */
-    .d-pad { display: grid; grid-template-areas: ". up ." "left down right"; gap: 6px; flex: 1; }
+    .d-pad { display: grid; grid-template-areas: ". up ." "left down right"; gap: 8px; flex: 1; }
     .up { grid-area: up; } .down { grid-area: down; } .left { grid-area: left; } .right { grid-area: right; }
     
-    #textInput { flex: 1; height: 45px; min-height: 45px; padding: 8px; font-size: 14px; font-weight: bold; border-radius: 6px; border: 2px solid #00d2ff; outline: none; background-color: #12141f; color: #00d2ff; resize: none; }
-    #textInput::placeholder { color: #555870; font-size: 12px; }
+    #textInput { flex: 1; height: 50px; min-height: 50px; padding: 10px; font-size: 15px; font-weight: bold; border-radius: 8px; border: 2px solid #00d2ff; outline: none; background-color: #12141f; color: #00d2ff; resize: none; }
+    #textInput::placeholder { color: #555870; font-size: 13px; }
     
     #appContent { display: none; flex-direction: column; height: 100%; overflow-y: auto; padding-bottom: 20px; }
     #hiddenKeyCatcher { position: absolute; top: -9999px; left: -9999px; opacity: 0; width: 1px; height: 1px; }
@@ -84,7 +76,7 @@
     <input type="text" id="hiddenKeyCatcher" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
 
     <div id="topBar">
-      <div style="font-size: 13px; font-weight: bold; color: #00d2ff;">⚡ KVM Pro Ultimate</div>
+      <div style="font-size: 14px; font-weight: bold; color: #00d2ff;">⚡ Clean KVM Pro</div>
       <div class="status-group">
         <button id="refreshBtn" onclick="location.reload()">🔄 Refresh</button>
         <div id="netStatus">🟢 Ready</div>
@@ -99,24 +91,6 @@
       <button class="btn btn-left" onclick="triggerEffect(this); sendCmd('click', 'L')">Left Click</button>
       <button id="dragBtn" class="btn btn-drag" onclick="toggleDrag()">Drag: OFF</button>
       <button class="btn btn-right" onclick="triggerEffect(this); sendCmd('click', 'R')">Right Click</button>
-    </div>
-
-    <!-- Screen Modifiers (For Android fallback shortcuts) -->
-    <div class="grid-4">
-      <button id="ctrlMod" class="btn mod-screen-btn" onclick="toggleScreenMod(128, this)">Ctrl (Lock)</button>
-      <button id="altMod" class="btn mod-screen-btn" onclick="toggleScreenMod(130, this)">Alt (Lock)</button>
-      <button id="shiftMod" class="btn mod-screen-btn" onclick="toggleScreenMod(129, this)">Shift (Lock)</button>
-      <button id="winMod" class="btn mod-screen-btn" onclick="toggleScreenMod(131, this)">Win (Lock)</button>
-    </div>
-
-    <!-- Macro Shortcuts -->
-    <div class="grid-6">
-      <button class="btn" style="background:#0984e3;" onclick="sendMacro([128, 99])">Ctrl+C</button>
-      <button class="btn" style="background:#00b894;" onclick="sendMacro([128, 118])">Ctrl+V</button>
-      <button class="btn" style="background:#e17055;" onclick="sendMacro([128, 97])">Ctrl+A</button>
-      <button class="btn" style="background:#6c5ce7;" onclick="sendMacro([128, 122])">Ctrl+Z</button>
-      <button class="btn" style="background:#d63031;" onclick="sendMacro([130, 179])">Alt+Tab</button>
-      <button class="btn" style="background:#e1b12c; color:black;" onclick="sendMacro([131, 100])">Win+D</button>
     </div>
 
     <!-- Analog Mouse Movement Pad -->
@@ -137,18 +111,18 @@
     <!-- Text Typing Area -->
     <div class="row">
       <textarea id="textInput" placeholder="Type here for batch live queue streaming..."></textarea>
-      <button class="btn" style="background:#0078d4; width:80px; font-weight:bold;" onclick="sendTextDirect()">Send</button>
+      <button class="btn" style="background:#0078d4; width:90px; font-weight:bold;" onclick="sendTextDirect()">Send</button>
     </div>
 
     <!-- Clipboard & Special Actions -->
-    <div class="row">
-      <button class="btn" style="flex:1; background:#0984e3;" onclick="sendCmd('copy', '1')">📋 Copy</button>
-      <button class="btn" style="flex:1; background:#00b894;" onclick="sendCmd('paste', '1')">📝 Paste</button>
-      <button class="btn" style="flex:1; background:#e17055;" onclick="sendCmd('undo', '1')">↩️ Undo</button>
-      <button class="btn" style="flex:1; background:#d63031;" onclick="sendCmd('cad', '1')">CAD</button>
+    <div class="grid-4">
+      <button class="key-btn" style="background:#0984e3;" onclick="sendCmd('copy', '1')">Copy 📋</button>
+      <button class="key-btn" style="background:#00b894;" onclick="sendCmd('paste', '1')">Paste 📝</button>
+      <button class="key-btn" style="background:#e17055;" onclick="sendCmd('undo', '1')">Undo ↩️</button>
+      <button class="key-btn" style="background:#d63031;" onclick="sendCmd('cad', '1')">CAD</button>
     </div>
 
-    <!-- Functional Keys Grid 1 -->
+    <!-- Functional Keys Grid -->
     <div class="grid-4">
       <button class="key-btn" style="background:#8e44ad" onclick="sendCmd('lang', '1')">Lang 🌐</button>
       <button class="key-btn" style="background:#e1b12c; color:black;" onclick="sendCmd('key', '193')">Caps</button>
@@ -156,17 +130,16 @@
       <button class="key-btn" onclick="sendCmd('key', '177')">ESC</button>
     </div>
 
-    <!-- Functional Keys Grid 2 -->
     <div class="grid-4">
       <button class="key-btn" onclick="sendCmd('key', '212')">DEL</button>
-      <button class="key-btn" onclick="sendCmd('key', '178')">B-Space</button>
+      <button class="key-btn" onclick="sendCmd('key', '178')">Backspace</button>
       <button class="key-btn" onclick="sendCmd('key', '198')">F5</button>
       <button class="key-btn" style="background:#28a745" onclick="sendCmd('key', '176')">Enter</button>
     </div>
 
     <!-- Clear All & D-Pad Arrows -->
     <div class="row">
-      <button class="key-btn key-clr" style="flex: 0.5; background:#c0392b;" onclick="releaseAll()">CLR All</button>
+      <button class="key-btn key-clr" style="flex: 0.5; background:#c0392b;" onclick="releaseAll()">CLR</button>
       <div class="d-pad">
         <button class="key-btn up" onclick="sendCmd('key', '218')">UP</button>
         <button class="key-btn left" onclick="sendCmd('key', '216')">LT</button>
@@ -235,10 +208,6 @@
       processQueue();
     }
 
-    function sendMacro(keysArray) {
-      sendCmd('combo', keysArray.join(','));
-    }
-
     function processQueue() {
       if (isSending || requestQueue.length === 0) return;
       isSending = true;
@@ -257,19 +226,6 @@
       });
     }
 
-    let activeScreenMods = new Set();
-    function toggleScreenMod(code, btn) {
-      if (activeScreenMods.has(code)) {
-        activeScreenMods.delete(code);
-        btn.classList.remove('active');
-        sendCmd('mod', `${code},0`);
-      } else {
-        activeScreenMods.add(code);
-        btn.classList.add('active');
-        sendCmd('mod', `${code},1`);
-      }
-    }
-
     let isDragging = false;
     function toggleDrag() {
       isDragging = !isDragging;
@@ -281,8 +237,6 @@
 
     function releaseAll() {
       isDragging = false;
-      activeScreenMods.clear();
-      document.querySelectorAll('.mod-screen-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('dragBtn').innerText = "Drag: OFF";
       document.querySelectorAll('.active').forEach(b => b.classList.remove('active'));
       sendCmd('release', '1');
@@ -346,12 +300,42 @@
     document.addEventListener('wheel', (e) => { if(isPointerLocked) { if(e.deltaY>0)sendCmd('scroll','-3'); else sendCmd('scroll','3'); } }, {passive:true});
     document.addEventListener('contextmenu', e => { if(isPointerLocked) e.preventDefault(); });
 
-    // Live Keyboard Catching Engine
+    // ==========================================
+    // 🧠 Automatic Physical Keyboard Shortcuts Engine (Ctrl+C, Ctrl+V, etc.)
+    // ==========================================
     hiddenCatcher.addEventListener('keydown', (e) => {
       if (isPointerLocked) {
-        e.preventDefault(); e.stopPropagation();
-        if (e.key === "Escape") { document.exitPointerLock(); sendCmd('key', '177'); return; }
+        e.preventDefault(); 
+        e.stopPropagation();
         
+        if (e.key === "Escape") { 
+          document.exitPointerLock(); 
+          sendCmd('key', '177'); 
+          return; 
+        }
+
+        // Automatic Shortcuts Detection (Ctrl+C, Ctrl+V, Ctrl+A, Ctrl+Z, etc.)
+        if (e.ctrlKey || e.altKey || e.metaKey) {
+          let keys = [];
+          if (e.ctrlKey) keys.push(128); // Ctrl
+          if (e.altKey) keys.push(130);   // Alt
+          if (e.shiftKey) keys.push(129); // Shift
+          if (e.metaKey) keys.push(131);  // Win
+
+          let keyChar = e.key.toLowerCase();
+          if (keyChar.length === 1) {
+            let charCode = keyChar.charCodeAt(0);
+            keys.push(charCode);
+            sendCmd('combo', keys.join(',')); // Automatically sent to Server/ESP32 as a combo
+          } else if (e.code === 'Tab') {
+            keys.push(179); // Alt+Tab
+            sendCmd('combo', keys.join(','));
+          }
+          hiddenCatcher.value = '';
+          return;
+        }
+
+        // Standard Keys & Typing
         if (e.key.length === 1) {
           sendCmd('text', e.key);
         } else {
