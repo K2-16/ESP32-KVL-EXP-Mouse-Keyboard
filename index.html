@@ -267,8 +267,8 @@
     document.addEventListener('wheel', (e) => { if(isPointerLocked) { if(e.deltaY>0)sendCmd('scroll','-3'); else sendCmd('scroll','3'); } }, {passive:true});
     document.addEventListener('contextmenu', e => { if(isPointerLocked) e.preventDefault(); });
 
-    // ==========================================
-    // 🧠 Direct Physical Keyboard Shortcuts Engine (No Queue)
+   // ==========================================
+    // 🧠 Direct Physical Keyboard Shortcuts & Mouse Engine
     // ==========================================
     hiddenCatcher.addEventListener('keydown', (e) => {
       if (isPointerLocked) {
@@ -281,38 +281,50 @@
           return; 
         }
 
-        // Automatic Physical Shortcuts Detection (Ctrl+C, Ctrl+V, etc.)
+        // 1. التعامل مع الاختصارات المدمجة (Ctrl, Alt, Shift, Win + أي زرار)
         if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) {
           let keys = [];
-          if (e.ctrlKey) keys.push(128);
-          if (e.shiftKey) keys.push(129);
-          if (e.altKey) keys.push(130);
-          if (e.metaKey) keys.push(131);
+          if (e.ctrlKey) keys.push(128); // Ctrl
+          if (e.shiftKey) keys.push(129); // Shift
+          if (e.altKey) keys.push(130);   // Alt
+          if (e.metaKey) keys.push(131);  // Win
+
+          // التعامل مع Alt + Tab
+          if (e.code === 'Tab') {
+            keys.push(179); // Tab
+            sendCmd('combo', keys.join(','));
+            hiddenCatcher.value = '';
+            return;
+          }
 
           let keyChar = e.key.toLowerCase();
+          // لو زرار عادي مع الـ Modifiers (زي Ctrl+Z أو Ctrl+C)
           if (keyChar.length === 1 && keyChar !== 'control' && keyChar !== 'alt' && keyChar !== 'shift' && keyChar !== 'meta') {
             keys.push(keyChar.charCodeAt(0));
-            sendCmd('combo', keys.join(','));
-          } else if (e.code === 'Tab') {
-            keys.push(179);
             sendCmd('combo', keys.join(','));
           }
           hiddenCatcher.value = '';
           return;
         }
 
-        // Standard Typing / Keys
+        // 2. زرار الـ Win لوحده (لو دوست Win من غير حاجة)
+        if (e.code === 'MetaLeft' || e.code === 'MetaRight') {
+          sendCmd('key', '131');
+          return;
+        }
+
+        // 3. الكتابة العادية والمفاتيح المفردة
         if (e.key.length === 1) {
           sendCmd('text', e.key);
         } else {
-          let code = getHIDCode(e.code);
+          let code = getHIDCode(e.code, e.key);
           if (code > 0) sendCmd('key', code.toString());
         }
         hiddenCatcher.value = '';
       }
     }, true);
 
-    function getHIDCode(code) {
+    function getHIDCode(code, key) {
       switch(code) {
         case 'Enter': return 176;
         case 'Escape': return 177;
@@ -323,8 +335,13 @@
         case 'ArrowLeft': return 216; case 'ArrowRight': return 215;
         case 'F1': return 194; case 'F2': return 195; case 'F3': return 196;
         case 'F4': return 197; case 'F5': return 198; case 'F12': return 205;
-        default: return 0;
+        case 'Digit0': return 48; // تصحيح رقم 0 العلوي
+        case 'Numpad0': return 234; // رقم 0 في النمباد (لو موجود)
+        default: 
+          if (key === '0') return 48;
+          return 0;
       }
+    }
     }
   </script>
 </body>
