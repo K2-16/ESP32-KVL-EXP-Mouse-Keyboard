@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-  <title>Secure KVM Pro</title>
+  <title>Full-Mapped Queue KVM Pro</title>
   <style>
     * { box-sizing: border-box; }
     body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 8px; background-color: #121212; color: white; display: flex; flex-direction: column; min-height: 100vh; overflow: hidden; }
@@ -38,26 +38,16 @@
     
     .key-btn { padding: 12px 5px; font-size: 13px; background-color: #444; border: none; border-radius: 6px; color: white; font-weight: bold; transition: 0.05s; cursor: pointer; user-select: none; }
     .key-btn:active, .key-btn.clicked { background-color: #00d2ff; color: black; transform: scale(0.95); }
-    .key-btn.active { background-color: #00d2ff !important; color: black !important; border-bottom: 3px solid #0096c7; font-weight: 900; }
     
-    .analog-pad { display: grid; grid-template-areas: ". a-up ." "a-left a-down a-right"; gap: 6px; width: 100%; margin-bottom: 8px; background: #1a1a1a; padding: 10px; border-radius: 8px; border: 1px dashed #555;}
-    .a-up { grid-area: a-up; background-color: #e67e22;} .a-down { grid-area: a-down; background-color: #e67e22;} .a-left { grid-area: a-left; background-color: #e67e22;} .a-right { grid-area: a-right; background-color: #e67e22;}
-    .analog-title { text-align: center; font-size: 12px; color: #aaa; margin-bottom: 5px; grid-column: span 3; }
-
-    .d-pad { display: grid; grid-template-areas: ". up ." "left down right"; gap: 6px; flex: 1; }
-    .up { grid-area: up; } .down { grid-area: down; } .left { grid-area: left; } .right { grid-area: right; }
-    
-    #textInput { flex: 1; height: 60px; min-height: 60px; padding: 10px; font-size: 14px; border-radius: 6px; border: 2px solid #444; outline: none; background-color: #222; color: white; resize: vertical; transition: 0.2s; }
+    #textInput { flex: 1; height: 60px; min-height: 60px; padding: 10px; font-size: 16px; font-weight: bold; border-radius: 6px; border: 2px solid #00d2ff; outline: none; background-color: #1a1a1a; color: #00d2ff; resize: vertical; transition: 0.2s; }
+    #textInput::placeholder { color: #555; }
     
     #appContent { display: none; flex-direction: column; height: 100%; overflow-y: auto; padding-bottom: 20px;}
-
-    /* الحقل السري لالتقاط الكيبورد الفيزيائي (لا يرى بالعين) */
     #hiddenKeyCatcher { position: absolute; top: -9999px; left: -9999px; opacity: 0; width: 1px; height: 1px; }
   </style>
 </head>
 <body>
 
-  <!-- شاشة القفل -->
   <div id="lockScreen">
     <div class="login-card">
       <h2>🔐 Secure KVM</h2>
@@ -68,31 +58,22 @@
   </div>
 
   <div id="appContent">
-    <!-- الحقل السري لالتقاط الكيبورد الفيزيائي -->
     <input type="text" id="hiddenKeyCatcher" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
 
     <div id="topBar">
-      <div style="font-size: 16px; font-weight: bold; color: #00d2ff;">KVM Pro</div>
+      <div style="font-size: 16px; font-weight: bold; color: #00d2ff;">KVM Pro (Full Mapped)</div>
       <div class="status-group">
         <button id="refreshBtn" onclick="location.reload()">🔄 Refresh</button>
-        <div id="netStatus">⏳ Detecting...</div>
+        <div id="netStatus">⏳ Queue Ready</div>
       </div>
     </div>
 
-    <div id="trackpad">Touch or Click here to Lock Mouse & Keyboard</div>
+    <div id="trackpad" tabindex="0">Touch or Click here to Lock Mouse & Keyboard</div>
     
     <div class="grid-3">
       <button class="btn btn-left" onclick="triggerEffect(this); sendCmd('click', 'L')">Left</button>
       <button id="dragBtn" class="btn btn-drag" onclick="toggleDrag()">Drag: OFF</button>
       <button class="btn btn-right" onclick="triggerEffect(this); sendCmd('click', 'R')">Right</button>
-    </div>
-
-    <div class="analog-pad">
-      <div class="analog-title">Hold to Move Mouse (Analog)</div>
-      <button class="key-btn a-up" onpointerdown="sendCmd('joy', '0,-5')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-UP ⬆️</button>
-      <button class="key-btn a-left" onpointerdown="sendCmd('joy', '-5,0')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-LFT ⬅️</button>
-      <button class="key-btn a-down" onpointerdown="sendCmd('joy', '0,5')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-DN ⬇️</button>
-      <button class="key-btn a-right" onpointerdown="sendCmd('joy', '5,0')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-RGT ➡️</button>
     </div>
 
     <div class="row">
@@ -101,8 +82,8 @@
     </div>
 
     <div class="row">
-      <textarea id="textInput" placeholder="Type multi-line text here..."></textarea>
-      <button class="btn btn-send" style="background:#007bff; padding:0 15px; border-radius:6px; font-weight:bold; border:none; color:white;" onclick="triggerEffect(this); sendText()">Send Text</button>
+      <textarea id="textInput" placeholder="اكتب هنا.. وسيتم إرسال النص طلقة ورا طلقة بالترتيب وبدون فقدان أي حرف"></textarea>
+      <button class="btn btn-send" style="background:#007bff; padding:0 15px; border-radius:6px; font-weight:bold; border:none; color:white;" onclick="triggerEffect(this); sendTextDirect()">Send Text</button>
     </div>
 
     <div class="row">
@@ -163,10 +144,16 @@
       let pwd = isAuto ? userPassword : document.getElementById('passInput').value;
       let errorDiv = document.getElementById('loginError');
       if (pwd === "") return;
-      fetch(ACTIVE_URL + "/login", { method: 'POST', headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' }, body: JSON.stringify({ password: pwd }) })
+
+      fetch(ACTIVE_URL + "/login", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+        body: JSON.stringify({ password: pwd })
+      })
       .then(res => {
         if (res.status === 200) {
-          userPassword = pwd; localStorage.setItem("kvm_password", pwd);
+          userPassword = pwd;
+          localStorage.setItem("kvm_password", pwd);
           document.getElementById('lockScreen').style.display = "none";
           document.getElementById('appContent').style.display = "flex";
           document.body.style.overflow = "auto";
@@ -174,14 +161,47 @@
           localStorage.removeItem("kvm_password");
           if(!isAuto) { errorDiv.style.display = "block"; document.getElementById('passInput').value = ""; }
         }
-      }).catch(err => { if(!isAuto) { errorDiv.innerText = "Connection Error!"; errorDiv.style.display = "block"; } });
+      })
+      .catch(err => {
+        if(!isAuto) { errorDiv.innerText = "Connection Error!"; errorDiv.style.display = "block"; }
+      });
     }
 
     window.onload = detectNetwork;
 
     function triggerEffect(el) { el.classList.add('clicked'); setTimeout(() => el.classList.remove('clicked'), 150); }
+
+    // ==========================================
+    // 🧠 نظام الطابور الذكي (Request Queue Engine)
+    // ==========================================
+    let requestQueue = [];
+    let isSending = false;
+
     function sendCmd(type, val) {
-      fetch(ACTIVE_URL + "/set_command", { method: 'POST', headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' }, body: JSON.stringify({ type: type, val: val }) }).catch(err => console.log(err));
+      requestQueue.push({ type: type, val: val });
+      processQueue();
+    }
+
+    function processQueue() {
+      if (isSending || requestQueue.length === 0) return;
+
+      isSending = true;
+      let currentReq = requestQueue.shift();
+
+      fetch(ACTIVE_URL + "/set_command", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+        body: JSON.stringify({ type: currentReq.type, val: currentReq.val })
+      })
+      .then(res => {
+        isSending = false;
+        processQueue();
+      })
+      .catch(err => {
+        requestQueue.unshift(currentReq);
+        isSending = false;
+        setTimeout(processQueue, 500);
+      });
     }
 
     let isDragging = false;
@@ -193,20 +213,39 @@
       sendCmd('drag', isDragging ? "1" : "-1"); 
     }
 
-    function toggleMod(btn, code) { btn.classList.toggle('active'); sendCmd('mod', `${code},${btn.classList.contains('active') ? 1 : 0}`); }
-    function releaseAll() { isDragging = false; document.getElementById('dragBtn').innerText = "Drag: OFF"; document.querySelectorAll('.active').forEach(b => b.classList.remove('active')); sendCmd('release', '1'); }
-    function sendText() { let textInput = document.getElementById('textInput'); let text = textInput.value; if(text !== "") { sendCmd('text', text); textInput.value = ''; } }
+    function toggleMod(btn, code) {
+      btn.classList.toggle('active');
+      sendCmd('mod', `${code},${btn.classList.contains('active') ? 1 : 0}`);
+    }
+
+    function releaseAll() {
+      isDragging = false;
+      document.getElementById('dragBtn').innerText = "Drag: OFF";
+      document.querySelectorAll('.active').forEach(b => b.classList.remove('active'));
+      sendCmd('release', '1');
+    }
+
+    function sendTextDirect() {
+      let textInput = document.getElementById('textInput');
+      let text = textInput.value;
+      if(text !== "") { 
+        sendCmd('text', text); 
+        textInput.value = ''; 
+      }
+    }
 
     // ==========================================
-    // التحكم المشترك (الماوس + الكيبورد) المحسن
+    // التحكم والماوس
     // ==========================================
     let trackpad = document.getElementById('trackpad');
-    let hiddenCatcher = document.getElementById('hiddenKeyCatcher'); // المربع المخفي
-    let moveTimeout = null, accumulatedDx = 0, accumulatedDy = 0, lastX = 0, lastY = 0;
+    let hiddenCatcher = document.getElementById('hiddenKeyCatcher');
+    let moveTimeout = null, accumulatedDx = 0, accumulatedDy = 0;
     let isPointerLocked = false;
 
-    // 1. التاتش (بصباعك)
-    trackpad.addEventListener('touchstart', (e) => { lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; });
+    trackpad.addEventListener('touchstart', (e) => {
+      lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+    });
+
     trackpad.addEventListener('touchmove', (e) => {
       accumulatedDx += Math.round((e.touches[0].clientX - lastX) * 1.5);
       accumulatedDy += Math.round((e.touches[0].clientY - lastY) * 1.5);
@@ -215,14 +254,12 @@
       e.preventDefault();
     }, { passive: false });
 
-    // 2. تفعيل قفل الماوس وتفعيل "تركيز الكيبورد الإجباري"
     trackpad.addEventListener('click', () => {
-      hiddenCatcher.focus(); // ⬅️ الإجبار على قراءة الكيبورد
+      hiddenCatcher.focus();
       trackpad.requestPointerLock = trackpad.requestPointerLock || trackpad.webkitRequestPointerLock;
       if(trackpad.requestPointerLock) trackpad.requestPointerLock();
     });
 
-    // لو الموبايل حاول يفصل الكيبورد، نرجعه تاني طول ما وضع التحكم شغال
     hiddenCatcher.addEventListener('blur', () => {
       if (isPointerLocked) hiddenCatcher.focus();
     });
@@ -230,7 +267,7 @@
     document.addEventListener('pointerlockchange', () => {
       isPointerLocked = (document.pointerLockElement === trackpad);
       if (isPointerLocked) {
-        document.getElementById('netStatus').innerHTML = "🔒 Control Locked";
+        document.getElementById('netStatus').innerHTML = "🔒 Full Mapped Active";
         document.getElementById('netStatus').style.color = "#00b894";
         hiddenCatcher.focus();
       } else {
@@ -240,7 +277,6 @@
       }
     });
 
-    // 3. حركة الماوس الفيزيائي
     document.addEventListener('mousemove', (e) => {
       if (isPointerLocked) {
         accumulatedDx += (e.movementX * 2.5);
@@ -256,50 +292,95 @@
           let sendY = Math.round(accumulatedDy);
           if (sendX > 100) sendX = 100; if (sendX < -100) sendX = -100;
           if (sendY > 100) sendY = 100; if (sendY < -100) sendY = -100;
-          if (sendX !== 0 || sendY !== 0) { sendCmd('move', `${sendX},${sendY}`); accumulatedDx -= sendX; accumulatedDy -= sendY; } 
-          else { accumulatedDx = 0; accumulatedDy = 0; }
+          if (sendX !== 0 || sendY !== 0) { 
+            sendCmd('move', `${sendX},${sendY}`); 
+            accumulatedDx -= sendX; 
+            accumulatedDy -= sendY; 
+          } else { 
+            accumulatedDx = 0; 
+            accumulatedDy = 0; 
+          }
           moveTimeout = null;
         }, 15); 
       }
     }
 
-    document.addEventListener('mousedown', (e) => { if (isPointerLocked) { if (e.button === 0) sendCmd('drag', '1'); else if (e.button === 2) sendCmd('click', 'R'); } });
-    document.addEventListener('mouseup', (e) => { if (isPointerLocked && e.button === 0) sendCmd('drag', '-1'); });
-    document.addEventListener('wheel', (e) => { if (isPointerLocked) { if (e.deltaY > 0) sendCmd('scroll', '-3'); else sendCmd('scroll', '3'); } }, { passive: true });
-    document.addEventListener('contextmenu', (e) => { if (isPointerLocked) e.preventDefault(); });
+    document.addEventListener('mousedown', (e) => {
+      if (isPointerLocked) {
+        if (e.button === 0) sendCmd('drag', '1');
+        else if (e.button === 2) sendCmd('click', 'R');
+      }
+    });
 
-    // 4. التقاط الكيبورد من المربع المخفي (المفتاح السحري)
+    document.addEventListener('mouseup', (e) => {
+      if (isPointerLocked && e.button === 0) {
+        sendCmd('drag', '-1');
+      }
+    });
+
+    document.addEventListener('wheel', (e) => {
+      if (isPointerLocked) {
+        if (e.deltaY > 0) sendCmd('scroll', '-3');
+        else sendCmd('scroll', '3');
+      }
+    }, { passive: true });
+
+    document.addEventListener('contextmenu', (e) => {
+      if (isPointerLocked) e.preventDefault(); 
+    });
+
+    // ==========================================
+    // ⌨️ المابنج الشامل لكل أزرار الكيبورد والـ Modifiers عبر الطابور
+    // ==========================================
     hiddenCatcher.addEventListener('keydown', (e) => {
       if (isPointerLocked) {
-        e.preventDefault(); // منع الموبايل من كتابة أي شيء داخلياً
+        e.preventDefault(); 
         
         if (e.key === "Escape") {
           document.exitPointerLock(); 
+          sendCmd('key', '177');
           return;
         }
 
-        if (e.key.length === 1) {
-          sendCmd('text', e.key); 
-        } else {
-          let keyCode = getHIDKeyCode(e.key);
-          if (keyCode > 0) sendCmd('key', keyCode.toString());
+        // جدول مابنج كامل لأزرار الكيبورد الفيزيائي (أكواد USB HID الرسمية للأردوينو)
+        let hidCode = getFullHIDKeyCode(e);
+
+        if (hidCode > 0) {
+          sendCmd('key', hidCode.toString());
+        } else if (e.key.length === 1) {
+          sendCmd('text', e.key); // الحروف العادية تتدخل الطابور
         }
         
-        // تفريغ الحقل فوراً عشان يفضل جاهز
         hiddenCatcher.value = '';
       }
     });
 
-    function getHIDKeyCode(key) {
-      switch(key) {
+    function getFullHIDKeyCode(e) {
+      // التحقق من أزرار التحكم الخاصة (Modifiers & Special Keys)
+      switch(e.code) {
+        case 'ControlLeft': case 'ControlRight': return 128; // Ctrl
+        case 'ShiftLeft': case 'ShiftRight': return 129;     // Shift
+        case 'AltLeft': case 'AltRight': return 130;         // Alt
+        case 'MetaLeft': case 'MetaRight': return 131;       // Windows Key
         case 'Enter': return 176;
+        case 'Escape': return 177;
         case 'Backspace': return 178;
         case 'Tab': return 179;
+        case 'Delete': return 212;
+        case 'Insert': return 209;
+        case 'Home': return 210;
+        case 'End': return 213;
+        case 'PageUp': return 211;
+        case 'PageDown': return 214;
         case 'ArrowUp': return 218;
         case 'ArrowDown': return 217;
         case 'ArrowLeft': return 216;
         case 'ArrowRight': return 215;
-        case 'Delete': return 212;
+        case 'CapsLock': return 193;
+        case 'F1': return 194; case 'F2': return 195; case 'F3': return 196;
+        case 'F4': return 197; case 'F5': return 198; case 'F6': return 199;
+        case 'F7': return 200; case 'F8': return 201; case 'F9': return 202;
+        case 'F10': return 203; case 'F11': return 204; case 'F12': return 205;
         default: return 0;
       }
     }
