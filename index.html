@@ -222,8 +222,8 @@
     // الماوس باد طبيعي 1:1 تماماً بدون أي تعديل في الحساسية
     trackpad.addEventListener('touchstart', (e) => { lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; });
     trackpad.addEventListener('touchmove', (e) => {
-      accDx += Math.round((e.touches[0].clientX - lastX) * 1.2);
-      accDy += Math.round((e.touches[0].clientY - lastY) * 1.2);
+      accDx += Math.round((e.touches[0].clientX - lastX) * 2);
+      accDy += Math.round((e.touches[0].clientY - lastY) * 2);
       lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
       
       
