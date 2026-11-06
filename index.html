@@ -1,916 +1,396 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover">
-  <title>KVM S3 Pro - Enterprise Hardware Controller</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+  <title>Pure KVM Pro - Active DPI Doubled</title>
   <style>
-    :root {
-      --bg-dark: #0a0c14;
-      --card-bg: #141724;
-      --card-border: #22273d;
-      --accent-cyan: #00d2ff;
-      --accent-blue: #0078d4;
-      --accent-green: #2ed573;
-      --accent-red: #ff4757;
-      --accent-yellow: #ffa502;
-      --accent-purple: #9b59b6;
-      --text-main: #f1f2f6;
-      --text-muted: #8b92ad;
-    }
-
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      margin: 0; padding: 0;
-      background-color: var(--bg-dark);
-      color: var(--text-main);
-      display: flex; flex-direction: column;
-      height: 100vh; height: 100dvh;
-      overflow: hidden;
-      user-select: none;
-    }
-
-    /* Top Status Bar */
-    #headerBar {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 8px 12px;
-      background: var(--card-bg);
-      border-bottom: 1px solid var(--card-border);
-      flex-shrink: 0;
-    }
-    .brand-title {
-      font-size: 15px; font-weight: 800; color: var(--accent-cyan);
-      display: flex; align-items: center; gap: 6px;
-    }
-    .header-pills { display: flex; align-items: center; gap: 6px; }
-    .badge {
-      font-size: 11px; font-weight: 700;
-      padding: 4px 8px; border-radius: 6px;
-      background: #1b2033; color: var(--text-muted);
-      display: inline-flex; align-items: center; gap: 4px;
-    }
-    .badge-online { color: var(--accent-green); background: rgba(46, 213, 115, 0.12); }
-    .badge-remote { color: var(--accent-cyan); background: rgba(0, 210, 255, 0.12); }
-    .badge-offline { color: var(--accent-red); background: rgba(255, 71, 87, 0.12); }
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; background-color: #0f111a; color: #ffffff; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
     
-    .mic-btn {
-      font-size: 11px; font-weight: bold; padding: 5px 10px;
-      border-radius: 6px; border: none; cursor: pointer;
-      display: inline-flex; align-items: center; gap: 4px;
-      background: #2a2f45; color: var(--text-muted);
-      transition: all 0.2s;
-    }
-    .mic-btn.active {
-      background: var(--accent-red); color: white;
-      box-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
-      animation: pulse 1.5s infinite;
-    }
-    @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.8; }
-      100% { opacity: 1; }
-    }
+    #lockScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f111a; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    .login-card { background: #1a1c29; padding: 30px; border-radius: 14px; border: 1px solid #2a2d42; width: 100%; max-width: 350px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+    .login-card h2 { color: #00d2ff; margin-bottom: 20px; font-size: 22px; }
+    #passInput { font-size: 16px; text-align: center; padding: 12px; width: 100%; border-radius: 8px; border: 2px solid #333852; background: #12141f; color: white; margin-bottom: 15px; outline: none; }
+    #passInput:focus { border-color: #00d2ff; }
+    #loginBtn { padding: 12px; width: 100%; font-size: 16px; font-weight: bold; background: #0078d4; border: none; border-radius: 8px; color: white; cursor: pointer; }
+    #loginError { color: #ff4757; margin-top: 12px; font-size: 13px; font-weight: bold; display: none; }
+    
+    #topBar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 6px 10px; background: #161925; border-radius: 8px; border: 1px solid #25283d; }
+    .status-group { display: flex; align-items: center; gap: 8px; }
+    #netStatus { font-size: 11px; font-weight: bold; background: #222638; padding: 4px 8px; border-radius: 4px; color: #00d2ff; }
+    #refreshBtn { font-size: 11px; font-weight: bold; background: #25283d; color: #fff; padding: 4px 8px; border-radius: 4px; border: none; cursor: pointer; }
+    
+    #trackpad { height: 150px; min-height: 150px; background-color: #161925; border-radius: 10px; margin-bottom: 8px; touch-action: none; border: 2px dashed #00d2ff; display: flex; align-items: center; justify-content: center; color: #8a92b2; font-size: 14px; font-weight: 600; outline: none; cursor: crosshair; text-align: center; padding: 0 10px; }
+    
+    .row { display: flex; gap: 8px; margin-bottom: 8px; width: 100%; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; margin-bottom: 8px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; margin-bottom: 8px; }
+    
+    .btn { padding: 12px 6px; font-size: 13px; font-weight: bold; cursor: pointer; border: none; border-radius: 8px; background-color: #222638; color: white; transition: 0.1s; display: flex; align-items: center; justify-content: center; user-select: none; }
+    .btn:active, .btn.clicked { background-color: #383d59; transform: scale(0.96); }
+    
+    .btn-left { border-bottom: 3px solid #ff4757; }
+    .btn-right { border-bottom: 3px solid #2ed573; }
+    .btn-drag { border-bottom: 3px solid #feca57; background-color: #2a2e43; }
+    .btn-drag.active { background-color: #feca57; color: black; }
+    .btn-scroll { background-color: #0096c7; border-bottom: 3px solid #00b4d8; }
+    
+    .key-btn { padding: 12px 6px; font-size: 13px; background-color: #222638; border: none; border-radius: 8px; color: white; font-weight: bold; transition: 0.1s; cursor: pointer; user-select: none; text-align: center; }
+    .key-btn:active, .key-btn.clicked { background-color: #00d2ff; color: black; transform: scale(0.95); }
+    
+    .analog-pad { display: grid; grid-template-areas: ". a-up ." "a-left a-down a-right"; gap: 8px; width: 100%; margin-bottom: 8px; background: #161925; padding: 8px; border-radius: 10px; border: 1px dashed #333852; }
+    .a-up { grid-area: a-up; background-color: #e67e22; } 
+    .a-down { grid-area: a-down; background-color: #e67e22; } 
+    .a-left { grid-area: a-left; background-color: #e67e22; } 
+    .a-right { grid-area: a-right; background-color: #e67e22; }
+    .analog-title { text-align: center; font-size: 11px; color: #8a92b2; margin-bottom: 4px; grid-column: span 3; font-weight: bold; }
 
-    /* Main Container & Tabs */
-    #mainContent {
-      flex: 1; display: flex; flex-direction: column;
-      overflow-y: auto; overflow-x: hidden;
-      padding: 10px;
-      padding-bottom: 75px; /* space for bottom nav */
-    }
-    .tab-view { display: none; flex-direction: column; gap: 10px; width: 100%; height: 100%; }
-    .tab-view.active { display: flex; }
-
-    /* Bottom Navigation Bar (YouTube / Mobile Style) */
-    #bottomNav {
-      position: fixed; bottom: 0; left: 0; right: 0; height: 60px;
-      background: #121420;
-      border-top: 1px solid var(--card-border);
-      display: flex; justify-content: space-around; align-items: center;
-      z-index: 1000;
-    }
-    .nav-item {
-      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-      height: 100%; background: none; border: none;
-      color: var(--text-muted); cursor: pointer; transition: 0.15s;
-      font-size: 11px; font-weight: 600; gap: 3px;
-    }
-    .nav-item .icon { font-size: 19px; }
-    .nav-item.active { color: var(--accent-cyan); }
-    .nav-item.active .icon { transform: scale(1.1); }
-
-    /* Common Card / Row Layouts */
-    .panel {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 10px;
-    }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-    .grid-6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
-
-    /* Trackpad */
-    #trackpadArea {
-      flex: 1; min-height: 200px;
-      background: radial-gradient(circle at center, #181c2e 0%, #10121d 100%);
-      border: 2px dashed #2f3552;
-      border-radius: 14px;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      touch-action: none; cursor: crosshair;
-      text-align: center; color: var(--text-muted);
-      position: relative; overflow: hidden;
-    }
-    #trackpadArea.locked {
-      border: 2px solid var(--accent-cyan);
-      box-shadow: inset 0 0 20px rgba(0, 210, 255, 0.15);
-    }
-    .trackpad-hint { font-size: 13px; font-weight: 600; pointer-events: none; }
-    .trackpad-subhint { font-size: 10px; opacity: 0.7; margin-top: 4px; pointer-events: none; }
-
-    /* Buttons */
-    .btn {
-      padding: 12px 8px; font-size: 13px; font-weight: 700;
-      border-radius: 8px; border: none; cursor: pointer;
-      background: #1e2235; color: var(--text-main);
-      display: flex; align-items: center; justify-content: center;
-      transition: background 0.1s, transform 0.05s;
-    }
-    .btn:active { transform: scale(0.97); }
-    .btn-primary { background: var(--accent-blue); color: white; }
-    .btn-danger { background: var(--accent-red); color: white; }
-    .btn-success { background: var(--accent-green); color: black; }
-    .btn-warning { background: var(--accent-yellow); color: black; }
-
-    .btn-click-l { border-bottom: 3px solid var(--accent-red); }
-    .btn-click-r { border-bottom: 3px solid var(--accent-green); }
-    .btn-click-m { border-bottom: 3px solid var(--accent-yellow); }
-    .btn-drag.active { background: var(--accent-yellow); color: black; }
-
-    /* Precision D-Pad */
-    .dpad-container {
-      display: flex; flex-direction: column; align-items: center;
-      background: var(--card-bg); border: 1px solid var(--card-border);
-      border-radius: 12px; padding: 8px; gap: 6px;
-    }
-    .dpad-header {
-      width: 100%; display: flex; justify-content: space-between; align-items: center;
-      font-size: 12px; font-weight: bold; color: var(--text-muted);
-    }
-    .step-selector { display: flex; gap: 4px; }
-    .step-btn {
-      font-size: 10px; padding: 2px 7px; border-radius: 4px;
-      border: 1px solid #333854; background: #181b2a; color: var(--text-muted);
-      cursor: pointer;
-    }
-    .step-btn.active {
-      background: var(--accent-cyan); color: black; font-weight: bold; border-color: var(--accent-cyan);
-    }
-    .dpad-grid {
-      display: grid;
-      grid-template-areas: 
-        ".    up    ."
-        "left center right"
-        ".    down  .";
-      gap: 6px;
-    }
-    .dp-up { grid-area: up; }
-    .dp-down { grid-area: down; }
-    .dp-left { grid-area: left; }
-    .dp-right { grid-area: right; }
-    .dp-center {
-      grid-area: center;
-      background: #252a42; border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 11px; font-weight: bold; color: var(--accent-cyan);
-    }
-    .dp-btn {
-      width: 52px; height: 44px;
-      background: #1f2338; border: 1px solid #2e3452; border-radius: 8px;
-      color: white; font-size: 15px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .dp-btn:active { background: var(--accent-cyan); color: black; }
-
-    /* Keyboard Layout */
-    .key-cap {
-      padding: 10px 4px; font-size: 12px; font-weight: 700;
-      background: #1c2033; border: 1px solid #282e49; border-radius: 6px;
-      color: var(--text-main); text-align: center; cursor: pointer;
-    }
-    .key-cap:active { background: var(--accent-cyan); color: black; }
-    .key-fn { background: #161929; color: #a4b0be; font-size: 11px; }
-
-    /* Inputs */
-    .text-input {
-      width: 100%; padding: 10px; border-radius: 8px;
-      border: 1px solid var(--card-border); background: #0f111a;
-      color: white; font-size: 13px; outline: none;
-    }
-    .text-input:focus { border-color: var(--accent-cyan); }
-
-    /* Settings Page */
-    .setting-row {
-      display: flex; flex-direction: column; gap: 6px;
-      margin-bottom: 12px;
-    }
-    .setting-label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
-    .slider {
-      width: 100%; height: 6px; border-radius: 5px;
-      background: #252a40; outline: none; -webkit-appearance: none;
-    }
-    .slider::-webkit-slider-thumb {
-      -webkit-appearance: none; appearance: none;
-      width: 18px; height: 18px; border-radius: 50%;
-      background: var(--accent-cyan); cursor: pointer;
-    }
-
-    /* Modal / Lock Screen */
-    #lockScreen {
-      position: fixed; inset: 0; background: #0a0c14; z-index: 9999;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 20px;
-    }
-    .login-box {
-      background: var(--card-bg); border: 1px solid var(--card-border);
-      border-radius: 14px; padding: 25px; width: 100%; max-width: 340px;
-      text-align: center;
-    }
-
+    .d-pad { display: grid; grid-template-areas: ". up ." "left down right"; gap: 8px; flex: 1; }
+    .up { grid-area: up; } .down { grid-area: down; } .left { grid-area: left; } .right { grid-area: right; }
+    
+    #textInput { flex: 1; height: 45px; min-height: 45px; padding: 8px; font-size: 14px; font-weight: bold; border-radius: 8px; border: 2px solid #00d2ff; outline: none; background-color: #12141f; color: #00d2ff; resize: none; }
+    #textInput::placeholder { color: #555870; font-size: 12px; }
+    
+    #appContent { display: none; flex-direction: column; height: 100%; overflow-y: auto; padding-bottom: 20px; }
     #hiddenKeyCatcher { position: absolute; top: -9999px; left: -9999px; opacity: 0; width: 1px; height: 1px; }
   </style>
 </head>
 <body>
 
-  <!-- Hidden input for Desktop Physical Keyboard Capture -->
-  <input type="text" id="hiddenKeyCatcher" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-
-  <!-- Password / Auth Modal -->
+  <!-- Login Overlay -->
   <div id="lockScreen">
-    <div class="login-box">
-      <div style="font-size: 32px; margin-bottom: 8px;">🔐</div>
-      <h2 style="margin: 0 0 15px 0; color: var(--accent-cyan); font-size: 20px;">KVM S3 Pro Login</h2>
-      <input type="password" id="passInput" class="text-input" placeholder="Enter Master Key" style="text-align:center; margin-bottom:12px;">
-      <button class="btn btn-primary" style="width:100%;" onclick="performLogin()">Connect to Host</button>
-      <div id="loginError" style="color:var(--accent-red); font-size:12px; margin-top:10px; display:none;">❌ Invalid Key or Offline Server</div>
+    <div class="login-card">
+      <h2>🔐 Secure KVM</h2>
+      <input type="password" id="passInput" placeholder="Enter Password" onkeypress="if(event.key === 'Enter') verifyPassword()">
+      <button id="loginBtn" onclick="verifyPassword()">Login</button>
+      <div id="loginError">❌ Wrong Password!</div>
     </div>
   </div>
 
-  <!-- Header Top Bar -->
-  <div id="headerBar">
-    <div class="brand-title">
-      <span>⚡ KVM S3</span>
-    </div>
-    <div class="header-pills">
-      <button id="micToggleBtn" class="mic-btn" onclick="toggleMicrophone()">
-        <span id="micIcon">🎙️</span> <span id="micText">Mic OFF</span>
-      </button>
-      <div id="netStatusBadge" class="badge badge-offline">Connecting...</div>
-      <div id="pingBadge" class="badge">-- ms</div>
-    </div>
-  </div>
+  <!-- Main Interface -->
+  <div id="appContent">
+    <input type="text" id="hiddenKeyCatcher" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
 
-  <!-- Main Container -->
-  <div id="mainContent">
-
-    <!-- TAB 1: CONTROLLER (Touchpad & Precision Mouse) -->
-    <div id="tabController" class="tab-view active">
-      
-      <!-- Trackpad Area -->
-      <div id="trackpadArea" tabindex="0">
-        <div class="trackpad-hint" id="trackpadStateHint">👉 Tap here for Touchpad / Lock Mode</div>
-        <div class="trackpad-subhint">Move 1 finger to glide • 2 fingers to scroll</div>
+    <div id="topBar">
+      <div style="font-size: 14px; font-weight: bold; color: #00d2ff;">⚡ KVM Pro </div>
+      <div class="status-group">
+        <button id="refreshBtn" onclick="location.reload()">🔄 Refresh</button>
+        <div id="netStatus">🟢 Ready</div>
       </div>
-
-      <!-- Mouse Buttons -->
-      <div class="grid-4">
-        <button class="btn btn-click-l" onpointerdown="sendQuickCmd('click', 'L')">Left</button>
-        <button id="dragToggleBtn" class="btn btn-drag" onclick="toggleDrag()">Drag: OFF</button>
-        <button class="btn btn-click-m" onpointerdown="sendQuickCmd('click', 'M')">Mid</button>
-        <button class="btn btn-click-r" onpointerdown="sendQuickCmd('click', 'R')">Right</button>
-      </div>
-
-      <!-- Precision D-Pad & Scroll Bar -->
-      <div class="grid-2">
-        <!-- Precision D-Pad -->
-        <div class="dpad-container">
-          <div class="dpad-header">
-            <span>🎯 Precision Step</span>
-            <div class="step-selector">
-              <button class="step-btn active" onclick="setDpadStep(1, this)">1px</button>
-              <button class="step-btn" onclick="setDpadStep(5, this)">5px</button>
-              <button class="step-btn" onclick="setDpadStep(15, this)">15px</button>
-            </div>
-          </div>
-          <div class="dpad-grid">
-            <button class="dp-btn dp-up" onpointerdown="dpadStep(0, -1)">⬆️</button>
-            <button class="dp-btn dp-left" onpointerdown="dpadStep(-1, 0)">⬅️</button>
-            <div class="dp-center" id="dpadStepDisplay">1px</div>
-            <button class="dp-btn dp-right" onpointerdown="dpadStep(1, 0)">➡️</button>
-            <button class="dp-btn dp-down" onpointerdown="dpadStep(0, 1)">⬇️</button>
-          </div>
-        </div>
-
-        <!-- Quick Scroller & Passthrough Trigger -->
-        <div style="display:flex; flex-direction:column; gap:8px;">
-          <button class="btn" style="flex:1; background:#0096c7;" onpointerdown="sendQuickCmd('scroll', '3')">Scroll ⬆️</button>
-          <button class="btn" style="flex:1; background:#0077b6;" onpointerdown="sendQuickCmd('scroll', '-3')">Scroll ⬇️</button>
-          <button id="lockModeBtn" class="btn btn-warning" onclick="requestFullHardwarePassthrough()">
-            🔒 HW Passthrough
-          </button>
-        </div>
-      </div>
-
     </div>
 
-    <!-- TAB 2: KEYBOARD & MACROS -->
-    <div id="tabKeyboard" class="tab-view">
-      
-      <!-- Primary Office Macros -->
-      <div class="panel">
-        <div style="font-size:11px; font-weight:bold; color:var(--text-muted); margin-bottom:8px;">🚀 QUICK ACTIONS</div>
-        <div class="grid-4" style="margin-bottom:8px;">
-          <button class="btn btn-primary" onclick="sendCombo([128, 99])">Copy 📋</button>
-          <button class="btn btn-success" onclick="sendCombo([128, 118])">Paste 📝</button>
-          <button class="btn" style="background:#e67e22;" onclick="sendCombo([128, 122])">Undo ↩️</button>
-          <button class="btn btn-danger" onclick="sendQuickCmd('cad', '1')">CAD</button>
-        </div>
-        <div class="grid-4">
-          <button class="btn" style="background:#8e44ad;" onclick="sendQuickCmd('lang', '1')">Lang 🌐</button>
-          <button class="btn" style="background:#34495e;" onclick="sendQuickCmd('win', '1')">Win 🪟</button>
-          <button class="btn" style="background:#2c3e50;" onclick="sendCombo([130, 179])">Alt+Tab</button>
-          <button class="btn btn-danger" onclick="sendQuickCmd('altf4', '1')">Alt+F4</button>
-        </div>
-      </div>
-
-      <!-- Live Stream Text Input -->
-      <div class="panel">
-        <div style="font-size:11px; font-weight:bold; color:var(--text-muted); margin-bottom:8px;">💬 STREAM TEXT TO TARGET PC</div>
-        <div style="display:flex; gap:8px;">
-          <input type="text" id="streamTextInput" class="text-input" placeholder="Type text to send directly...">
-          <button class="btn btn-primary" style="min-width:70px;" onclick="sendStreamText()">Send</button>
-        </div>
-      </div>
-
-      <!-- Function Row -->
-      <div class="grid-6">
-        <button class="key-cap key-fn" onclick="sendHIDKey(177)">ESC</button>
-        <button class="key-cap key-fn" onclick="sendHIDKey(194)">F1</button>
-        <button class="key-cap key-fn" onclick="sendHIDKey(195)">F2</button>
-        <button class="key-cap key-fn" onclick="sendHIDKey(198)">F5</button>
-        <button class="key-cap key-fn" onclick="sendHIDKey(204)">F11</button>
-        <button class="key-cap key-fn" onclick="sendHIDKey(212)">DEL</button>
-      </div>
-
-      <!-- Main Navigation Keys -->
-      <div class="grid-4">
-        <button class="key-cap" onclick="sendHIDKey(179)">TAB</button>
-        <button class="key-cap" onclick="sendHIDKey(178)">⌫ Back</button>
-        <button class="key-cap" style="background:#2ed573; color:black;" onclick="sendHIDKey(176)">Enter ↵</button>
-        <button class="key-cap" style="background:#c0392b;" onclick="releaseAllKeys()">CLR All</button>
-      </div>
-
-      <!-- On-Screen Arrow Keys -->
-      <div class="grid-4">
-        <button class="key-cap" onclick="sendHIDKey(216)">⬅️ Left</button>
-        <button class="key-cap" onclick="sendHIDKey(218)">⬆️ Up</button>
-        <button class="key-cap" onclick="sendHIDKey(217)">⬇️ Down</button>
-        <button class="key-cap" onclick="sendHIDKey(215)">➡️ Right</button>
-      </div>
-
+    <!-- Trackpad area -->
+    <div id="trackpad" tabindex="0">👉 Click here to Lock Control 👈</div>
+    
+    <!-- Mouse Clicks & Drag -->
+    <div class="grid-3">
+      <button class="btn btn-left" onclick="sendCmd('click', 'L')">Left Click</button>
+      <button id="dragBtn" class="btn btn-drag" onclick="toggleDrag()">Drag: OFF</button>
+      <button class="btn btn-right" onclick="sendCmd('click', 'R')">Right Click</button>
     </div>
 
-    <!-- TAB 3: SETTINGS & TOOLS -->
-    <div id="tabSettings" class="tab-view">
-      
-      <div class="panel">
-        <div style="font-size:13px; font-weight:800; color:var(--accent-cyan); margin-bottom:12px;">🌐 CONNECTION CONFIGURATION</div>
-        
-        <div class="setting-row">
-          <label class="setting-label">Ngrok Public URL:</label>
-          <input type="text" id="cfgNgrokUrl" class="text-input" placeholder="https://xxxx-xx.ngrok-free.dev">
-        </div>
-
-        <div class="setting-row">
-          <label class="setting-label">Local Host IP (Port 8080):</label>
-          <input type="text" id="cfgLocalUrl" class="text-input" placeholder="http://192.168.1.7:8080">
-        </div>
-
-        <div class="setting-row">
-          <label class="setting-label">Security Master Password:</label>
-          <input type="password" id="cfgPassword" class="text-input" placeholder="Enter Master Password">
-        </div>
-
-        <button class="btn btn-primary" style="width:100%; margin-top:6px;" onclick="saveConfigAndReconnect()">
-          💾 Save & Connect
-        </button>
-      </div>
-
-      <!-- Mouse Sensitivity Settings -->
-      <div class="panel">
-        <div style="font-size:13px; font-weight:800; color:var(--accent-cyan); margin-bottom:12px;">⚙️ CONTROL PREFERENCES</div>
-        
-        <div class="setting-row">
-          <div style="display:flex; justify-content:space-between;">
-            <label class="setting-label">Mouse Sensitivity (DPI):</label>
-            <span id="dpiValueLabel" style="font-size:12px; font-weight:bold; color:var(--accent-cyan);">1.8x</span>
-          </div>
-          <input type="range" id="dpiSlider" class="slider" min="0.5" max="4.0" step="0.1" value="1.8" oninput="updateDpi(this.value)">
-        </div>
-      </div>
-
-      <!-- VDO.Ninja PiP Launcher -->
-      <div class="panel">
-        <div style="font-size:13px; font-weight:800; color:var(--accent-cyan); margin-bottom:12px;">📺 VDO.NINJA STREAM (PiP)</div>
-        <p style="font-size:11px; color:var(--text-muted); margin:0 0 10px 0;">
-          Launch your low-latency VDO.Ninja video capture feed into a native Picture-in-Picture window over this controller.
-        </p>
-        <input type="text" id="vdoNinjaUrl" class="text-input" placeholder="https://vdo.ninja/?view=xxxxxx" style="margin-bottom:8px;">
-        <button class="btn" style="background:#8e44ad; width:100%;" onclick="openVdoNinjaPip()">
-          📺 Open Floating PiP Screen
-        </button>
-      </div>
-
+    <!-- Analog Mouse Movement Pad -->
+    <div class="analog-pad">
+      <div class="analog-title">Mouse Analog Movement Pad</div>
+      <button class="key-btn a-up" onpointerdown="sendCmd('joy', '0,-5')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-UP ⬆️</button>
+      <button class="key-btn a-left" onpointerdown="sendCmd('joy', '-5,0')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-LFT ⬅️</button>
+      <button class="key-btn a-down" onpointerdown="sendCmd('joy', '0,5')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-DN ⬇️</button>
+      <button class="key-btn a-right" onpointerdown="sendCmd('joy', '5,0')" onpointerup="sendCmd('joy', '0,0')" onpointerleave="sendCmd('joy', '0,0')">M-RGT ➡️</button>
     </div>
 
-  </div>
+    <!-- Scroll Buttons -->
+    <div class="row">
+      <button class="btn btn-scroll" style="flex:1;" onclick="sendCmd('scroll', '3')">Scroll ⬆️</button>
+      <button class="btn btn-scroll" style="flex:1;" onclick="sendCmd('scroll', '-3')">Scroll ⬇️</button>
+    </div>
 
-  <!-- Bottom Navigation Bar -->
-  <div id="bottomNav">
-    <button class="nav-item active" onclick="switchTab('tabController', this)">
-      <div class="icon">🎮</div>
-      <div>Controller</div>
-    </button>
-    <button class="nav-item" onclick="switchTab('tabKeyboard', this)">
-      <div class="icon">⌨️</div>
-      <div>Keyboard</div>
-    </button>
-    <button class="nav-item" onclick="switchTab('tabSettings', this)">
-      <div class="icon">⚙️</div>
-      <div>Settings</div>
-    </button>
+    <!-- Text Typing Area -->
+    <div class="row">
+      <textarea id="textInput" placeholder="Type here for direct live streaming..."></textarea>
+      <button class="btn" style="background:#0078d4; width:80px; font-weight:bold;" onclick="sendTextDirect()">Send</button>
+    </div>
+
+    <!-- Clipboard & Special Actions -->
+    <div class="grid-4">
+      <button class="key-btn" style="background:#0984e3;" onclick="sendMacro([128, 99])">Copy 📋</button>
+      <button class="key-btn" style="background:#00b894;" onclick="sendMacro([128, 118])">Paste 📝</button>
+      <button class="key-btn" style="background:#e17055;" onclick="sendMacro([128, 122])">Undo ↩️</button>
+      <button class="key-btn" style="background:#d63031;" onclick="sendCmd('cad', '1')">CAD</button>
+    </div>
+
+    <!-- Functional Keys Grid -->
+    <div class="grid-4">
+      <button class="key-btn" style="background:#8e44ad" onclick="sendCmd('lang', '1')">Lang 🌐</button>
+      <button class="key-btn" style="background:#e1b12c; color:black;" onclick="sendCmd('key', '193')">Caps</button>
+      <button class="key-btn" onclick="sendCmd('altf4', '1')">Alt+F4</button>
+      <button class="key-btn" onclick="sendCmd('key', '177')">ESC</button>
+    </div>
+
+    <div class="grid-4">
+      <button class="key-btn" onclick="sendCmd('key', '212')">DEL</button>
+      <button class="key-btn" onclick="sendCmd('key', '178')">Backspace</button>
+      <button class="key-btn" onclick="sendCmd('key', '198')">F5</button>
+      <button class="key-btn" style="background:#28a745" onclick="sendCmd('key', '176')">Enter</button>
+    </div>
+
+    <!-- Clear All & D-Pad Arrows -->
+    <div class="row">
+      <button class="key-btn key-clr" style="flex: 0.5; background:#c0392b;" onclick="releaseAll()">CLR</button>
+      <div class="d-pad">
+        <button class="key-btn up" onclick="sendCmd('key', '218')">UP</button>
+        <button class="key-btn left" onclick="sendCmd('key', '216')">LT</button>
+        <button class="key-btn down" onclick="sendCmd('key', '217')">DN</button>
+        <button class="key-btn right" onclick="sendCmd('key', '215')">RT</button>
+      </div>
+    </div>
   </div>
 
   <script>
-    // ==========================================
-    // 1. STATE & STORAGE MANAGEMENT
-    // ==========================================
-    let cfg = {
-      ngrokUrl: localStorage.getItem('kvm_ngrok') || "https://sharply-snarl-buckle.ngrok-free.dev",
-      localUrl: localStorage.getItem('kvm_local') || "http://192.168.1.7:8080",
-      password: localStorage.getItem('kvm_pass') || "",
-      dpi: parseFloat(localStorage.getItem('kvm_dpi')) || 1.8,
-      vdoUrl: localStorage.getItem('kvm_vdo') || ""
-    };
+    const NGROK_BASE = "https://sharply-snarl-buckle.ngrok-free.dev";
+    const LOCAL_BASE = "http://192.168.1.7:8080";
+    let ACTIVE_URL = NGROK_BASE;
+    let userPassword = localStorage.getItem("kvm_password") || "";
 
-    let ACTIVE_BASE = cfg.ngrokUrl;
-    let sessionToken = localStorage.getItem('kvm_token') || "";
-    let currentDpadStep = 1;
-    let isDragging = false;
-    let mouseSensitivity = cfg.dpi;
-
-    // Initialize inputs
-    document.getElementById('cfgNgrokUrl').value = cfg.ngrokUrl;
-    document.getElementById('cfgLocalUrl').value = cfg.localUrl;
-    document.getElementById('cfgPassword').value = cfg.password;
-    document.getElementById('dpiSlider').value = cfg.dpi;
-    document.getElementById('dpiValueLabel').innerText = cfg.dpi + "x";
-    document.getElementById('vdoNinjaUrl').value = cfg.vdoUrl;
-
-    // ==========================================
-    // 2. TAB SWITCHING (SPA Experience)
-    // ==========================================
-    function switchTab(tabId, btn) {
-      document.querySelectorAll('.tab-view').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-      document.getElementById(tabId).classList.add('active');
-      btn.classList.add('active');
+    function detectNetwork() {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(), 800);
+      fetch(LOCAL_BASE + "/ping", { signal: controller.signal })
+        .then(res => { if (res.ok) { ACTIVE_URL = LOCAL_BASE; document.getElementById('netStatus').innerHTML = "🟢 Local"; checkSavedLogin(); } })
+        .catch(err => { ACTIVE_URL = NGROK_BASE; document.getElementById('netStatus').innerHTML = "🔵 Remote"; checkSavedLogin(); });
     }
 
-    // ==========================================
-    // 3. NETWORK DETECTION & AUTHENTICATION
-    // ==========================================
-    async function checkServerHealth() {
-      const pingBadge = document.getElementById('pingBadge');
-      const netBadge = document.getElementById('netStatusBadge');
-      const start = performance.now();
+    function checkSavedLogin() { if (userPassword !== "") verifyPassword(true); }
 
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 2000);
-
-        const res = await fetch(`${ACTIVE_BASE}/ping`, {
-          signal: controller.signal,
-          headers: { 'ngrok-skip-browser-warning': 'true' }
-        });
-        clearTimeout(timeout);
-
-        if (res.ok) {
-          const latency = Math.round(performance.now() - start);
-          pingBadge.innerText = `${latency} ms`;
-          netBadge.innerText = ACTIVE_BASE.includes('ngrok') ? "🔵 Remote" : "🟢 Local";
-          netBadge.className = "badge " + (ACTIVE_BASE.includes('ngrok') ? "badge-remote" : "badge-online");
-          return true;
-        }
-      } catch (e) {
-        // Fallback to local if ngrok fails, or vice versa
-        if (ACTIVE_BASE === cfg.ngrokUrl && location.protocol !== 'https:') {
-          ACTIVE_BASE = cfg.localUrl;
-        }
-      }
-
-      pingBadge.innerText = "-- ms";
-      netBadge.innerText = "🔴 Offline";
-      netBadge.className = "badge badge-offline";
-      return false;
-    }
-
-    async function performLogin() {
-      const pass = document.getElementById('passInput').value;
-      const errorDiv = document.getElementById('loginError');
-      if (!pass) return;
-
-      try {
-        const res = await fetch(`${ACTIVE_BASE}/login`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'ngrok-skip-browser-warning': 'true'
-          },
-          body: JSON.stringify({ password: pass })
-        });
-
-        const data = await res.json();
-        if (res.status === 200 && data.token) {
-          sessionToken = data.token;
-          localStorage.setItem('kvm_token', sessionToken);
-          localStorage.setItem('kvm_pass', pass);
-          document.getElementById('lockScreen').style.display = 'none';
-          errorDiv.style.display = 'none';
+    function verifyPassword(isAuto = false) {
+      let pwd = isAuto ? userPassword : document.getElementById('passInput').value;
+      let errorDiv = document.getElementById('loginError');
+      if (pwd === "") return;
+      fetch(ACTIVE_URL + "/login", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pwd }) })
+      .then(res => {
+        if (res.status === 200) {
+          userPassword = pwd; localStorage.setItem("kvm_password", pwd);
+          document.getElementById('lockScreen').style.display = "none";
+          document.getElementById('appContent').style.display = "flex";
         } else {
-          errorDiv.style.display = 'block';
+          localStorage.removeItem("kvm_password");
+          if(!isAuto) errorDiv.style.display = "block";
         }
-      } catch (err) {
-        errorDiv.style.display = 'block';
-      }
+      }).catch(err => { if(!isAuto) errorDiv.style.display = "block"; });
     }
+    window.onload = detectNetwork;
 
-    function saveConfigAndReconnect() {
-      cfg.ngrokUrl = document.getElementById('cfgNgrokUrl').value.trim();
-      cfg.localUrl = document.getElementById('cfgLocalUrl').value.trim();
-      cfg.password = document.getElementById('cfgPassword').value.trim();
-      localStorage.setItem('kvm_ngrok', cfg.ngrokUrl);
-      localStorage.setItem('kvm_local', cfg.localUrl);
-      localStorage.setItem('kvm_pass', cfg.password);
-      ACTIVE_BASE = cfg.ngrokUrl;
-      checkServerHealth();
-      alert("Settings saved! Reconnecting...");
-    }
-
-    function updateDpi(val) {
-      mouseSensitivity = parseFloat(val);
-      document.getElementById('dpiValueLabel').innerText = val + "x";
-      localStorage.setItem('kvm_dpi', val);
-    }
-
-    // Auto-login if token/password stored
-    window.addEventListener('DOMContentLoaded', () => {
-      checkServerHealth();
-      setInterval(checkServerHealth, 3500);
-
-      if (cfg.password) {
-        document.getElementById('passInput').value = cfg.password;
-        performLogin();
-      }
-    });
-
-    // ==========================================
-    // 4. LOW-LATENCY COMMAND DISPATCHER
-    // ==========================================
     function sendCmd(type, val) {
-      fetch(`${ACTIVE_BASE}/set_command`, {
+      fetch(ACTIVE_URL + "/set_command", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionToken}`,
-          'ngrok-skip-browser-warning': 'true'
-        },
+        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
         body: JSON.stringify({ type: type, val: val })
-      }).catch(err => console.error("Command error:", err));
+      }).catch(err => console.log(err));
     }
 
-    function sendQuickCmd(type, val) {
-      sendCmd(type, val);
+    function sendMacro(keysArray) {
+      sendCmd('combo', keysArray.join(','));
     }
 
-    function sendCombo(keys) {
-      sendCmd('combo', keys.join(','));
+    let isDragging = false;
+    function toggleDrag() {
+      isDragging = !isDragging;
+      let btn = document.getElementById('dragBtn');
+      btn.innerText = isDragging ? "Drag: ON" : "Drag: OFF";
+      btn.classList.toggle('active', isDragging);
+      sendCmd('drag', isDragging ? "1" : "-1"); 
     }
 
-    function sendHIDKey(code) {
-      sendCmd('key', code.toString());
-    }
-
-    function releaseAllKeys() {
+    function releaseAll() {
       isDragging = false;
-      const dragBtn = document.getElementById('dragToggleBtn');
-      dragBtn.innerText = "Drag: OFF";
-      dragBtn.classList.remove('active');
+      document.getElementById('dragBtn').innerText = "Drag: OFF";
+      document.querySelectorAll('.active').forEach(b => b.classList.remove('active'));
       sendCmd('release', '1');
     }
 
-    function toggleDrag() {
-      isDragging = !isDragging;
-      const btn = document.getElementById('dragToggleBtn');
-      btn.innerText = isDragging ? "Drag: ON" : "Drag: OFF";
-      btn.classList.toggle('active', isDragging);
-      sendCmd('drag', isDragging ? "1" : "-1");
-    }
-
-    function sendStreamText() {
-      const input = document.getElementById('streamTextInput');
-      if (input.value.trim() !== '') {
-        sendCmd('text', input.value);
-        input.value = '';
+    function sendTextDirect() {
+      let ti = document.getElementById('textInput');
+      if(ti.value !== "") { 
+        sendCmd('text', ti.value); 
+        ti.value = ''; 
       }
     }
 
-    // ==========================================
-    // 5. PRECISION D-PAD (Micro-Stepping)
-    // ==========================================
-    function setDpadStep(step, btn) {
-      currentDpadStep = step;
-      document.querySelectorAll('.step-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById('dpadStepDisplay').innerText = `${step}px`;
-    }
+    // Trackpad & Mouse Engine
+    let trackpad = document.getElementById('trackpad'), hiddenCatcher = document.getElementById('hiddenKeyCatcher');
+    let isPointerLocked = false, moveTimeout = null, accDx = 0, accDy = 0, lastX = 0, lastY = 0;
 
-    function dpadStep(xMult, yMult) {
-      const dx = Math.round(xMult * currentDpadStep);
-      const dy = Math.round(yMult * currentDpadStep);
-      sendCmd('move', `${dx},${dy}`);
-    }
-
-    // ==========================================
-    // 6. TOUCHPAD ENGINE & HARDWARE PASSTHROUGH
-    // ==========================================
-    const trackpad = document.getElementById('trackpadArea');
-    const hiddenCatcher = document.getElementById('hiddenKeyCatcher');
-    let isPointerLocked = false;
-    let accX = 0, accY = 0, moveThrottle = null;
-    let touchStartX = 0, touchStartY = 0;
-
-    // Mobile Touchpad Gesture Handling
-    trackpad.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 1) {
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-      } else if (e.touches.length === 2) {
-        touchStartY = e.touches[0].clientY;
-      }
-    }, { passive: true });
-
+    // الماوس باد طبيعي 1:1 تماماً بدون أي تعديل في الحساسية
+    trackpad.addEventListener('touchstart', (e) => { lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; });
     trackpad.addEventListener('touchmove', (e) => {
-      if (e.touches.length === 1) {
-        const dx = (e.touches[0].clientX - touchStartX) * mouseSensitivity;
-        const dy = (e.touches[0].clientY - touchStartY) * mouseSensitivity;
-        accX += dx;
-        accY += dy;
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-        dispatchMouseMovement();
-      } else if (e.touches.length === 2) {
-        // Two-finger scroll
-        const scrollDelta = e.touches[0].clientY - touchStartY;
-        if (Math.abs(scrollDelta) > 15) {
-          sendCmd('scroll', scrollDelta > 0 ? "2" : "-2");
-          touchStartY = e.touches[0].clientY;
-        }
-      }
+      accDx += Math.round((e.touches[0].clientX - lastX) * 2);
+      accDy += Math.round((e.touches[0].clientY - lastY) * 2);
+      lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+      
+      
+      processMouseMovement();
       e.preventDefault();
     }, { passive: false });
 
-    function dispatchMouseMovement() {
-      if (!moveThrottle) {
-        moveThrottle = setTimeout(() => {
-          const sx = Math.round(accX);
-          const sy = Math.round(accY);
-          if (sx !== 0 || sy !== 0) {
-            sendCmd('move', `${sx},${sy}`);
-            accX = 0;
-            accY = 0;
-          }
-          moveThrottle = null;
-        }, 18); // Smooth 55 FPS update rate to avoid network choking
-      }
-    }
-
-    // Full Hardware Passthrough Lock for Physical Mouse & Keyboard (OTG / Bluetooth)
-    function requestFullHardwarePassthrough() {
+    trackpad.addEventListener('click', () => {
       hiddenCatcher.focus();
-      if (trackpad.requestPointerLock) {
-        trackpad.requestPointerLock();
-      }
-      if (navigator.keyboard && navigator.keyboard.lock) {
-        navigator.keyboard.lock(["Escape", "Tab", "AltLeft", "AltRight", "MetaLeft", "MetaRight"]);
-      }
-    }
-
-    trackpad.addEventListener('click', requestFullHardwarePassthrough);
+      if(trackpad.requestPointerLock) trackpad.requestPointerLock();
+    });
 
     document.addEventListener('pointerlockchange', () => {
       isPointerLocked = (document.pointerLockElement === trackpad);
-      const hint = document.getElementById('trackpadStateHint');
-      const lockBtn = document.getElementById('lockModeBtn');
-
       if (isPointerLocked) {
-        trackpad.classList.add('locked');
-        hint.innerHTML = "🔒 HW Passthrough ACTIVE • Mouse & KB Locked";
-        lockBtn.innerText = "🔓 Press ESC to Unlock";
+        document.getElementById('netStatus').innerHTML = "🔒 Active";
+        trackpad.innerHTML = "🔥 Control Locked - Type Now!";
         hiddenCatcher.focus();
       } else {
-        trackpad.classList.remove('locked');
-        hint.innerHTML = "👉 Tap here for Touchpad / Lock Mode";
-        lockBtn.innerText = "🔒 HW Passthrough";
+        document.getElementById('netStatus').innerHTML = "🟢 Ready";
+        trackpad.innerHTML = "👉 Click here to Lock Control 👈";
         hiddenCatcher.blur();
       }
     });
 
-    // Physical Mouse movements when locked
+    // الماوس الخارجي لما يكون Active (تم مضاعفة الـ DPI لتصبح 5.0 بدلاً من 2.5)
     document.addEventListener('mousemove', (e) => {
       if (!isPointerLocked) return;
-      accX += e.movementX * mouseSensitivity;
-      accY += e.movementY * mouseSensitivity;
-      dispatchMouseMovement();
+      accDx += Math.round(e.movementX * 5.0); // تضاعفت السرعة للضعف تماماً عند القفل
+      accDy += Math.round(e.movementY * 5.0); 
+      processMouseMovement();
     });
 
-    document.addEventListener('mousedown', (e) => {
-      if (isPointerLocked) {
-        if (e.button === 0) sendCmd('drag', '1');
-        else if (e.button === 1) sendCmd('click', 'M');
-        else if (e.button === 2) sendCmd('click', 'R');
+    function processMouseMovement() {
+      if (!moveTimeout) {
+        moveTimeout = setTimeout(() => {
+          let sx = Math.round(accDx), sy = Math.round(accDy);
+          if (sx !== 0 || sy !== 0) { 
+            sendCmd('move', `${sx},${sy}`); 
+            accDx = 0; 
+            accDy = 0; 
+          }
+          moveTimeout = null;
+        }, 12); 
       }
+    }
+
+    document.addEventListener('mousedown', (e) => { 
+      if (isPointerLocked) { 
+        if(e.button === 0) sendCmd('drag', '1');      
+        else if(e.button === 1) sendCmd('click', 'M');  
+        else if(e.button === 2) sendCmd('click', 'R');  
+      } 
     });
+    
+    document.addEventListener('mouseup', (e) => { if (isPointerLocked && e.button===0) sendCmd('drag','-1'); });
+    document.addEventListener('wheel', (e) => { if(isPointerLocked) { if(e.deltaY>0)sendCmd('scroll','-3'); else sendCmd('scroll','3'); } }, {passive:true});
+    document.addEventListener('contextmenu', e => { if(isPointerLocked) e.preventDefault(); });
 
-    document.addEventListener('mouseup', (e) => {
-      if (isPointerLocked && e.button === 0) sendCmd('drag', '-1');
-    });
-
-    document.addEventListener('wheel', (e) => {
-      if (isPointerLocked) {
-        sendCmd('scroll', e.deltaY > 0 ? "-3" : "3");
-      }
-    }, { passive: true });
-
-    document.addEventListener('contextmenu', (e) => {
-      if (isPointerLocked) e.preventDefault();
-    });
-
-    // Physical Keyboard Catching with Raw Scancodes
+    // Keyboard Engine
     hiddenCatcher.addEventListener('keydown', (e) => {
       if (isPointerLocked) {
-        e.preventDefault();
+        e.preventDefault(); 
         e.stopPropagation();
-
-        if (e.key === 'Escape') {
-          document.exitPointerLock();
-          sendCmd('key', '177');
-          return;
+        
+        if (e.key === "Escape") { 
+          document.exitPointerLock(); 
+          sendCmd('key', '177'); 
+          return; 
         }
 
-        // Meta / Windows Key
-        if (e.code.includes('Meta') || e.key === 'OS') {
+        // 1. زرار الويندوز (Win Key)
+        if (e.code === 'MetaLeft' || e.code === 'MetaRight' || e.key === 'Meta' || e.key === 'OS') {
           sendCmd('win', '1');
+          hiddenCatcher.value = '';
           return;
         }
 
-        // Complex combinations (Ctrl, Alt, Shift, Meta)
+        // 2. اختصار Shift + Enter لكسر السطر
+        if (e.shiftKey && e.code === 'Enter') {
+          sendCmd('combo', '129,176'); 
+          hiddenCatcher.value = '';
+          return;
+        }
+
+        // 3. الاختصارات المركبة
         if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) {
-          let mods = [];
-          if (e.ctrlKey) mods.push(128);
-          if (e.shiftKey) mods.push(129);
-          if (e.altKey) mods.push(130);
-          if (e.metaKey) mods.push(131);
+          let keys = [];
+          if (e.ctrlKey) keys.push(128);
+          if (e.shiftKey) keys.push(129); 
+          if (e.altKey) keys.push(130);
+          if (e.metaKey) keys.push(131);
 
           if (e.code === 'Tab') {
-            mods.push(179);
-            sendCombo(mods);
+            keys.push(179);
+            sendCmd('combo', keys.join(','));
+            hiddenCatcher.value = '';
             return;
           }
 
           let arrowCode = getArrowCode(e.code);
           if (arrowCode > 0) {
-            mods.push(arrowCode);
-            sendCombo(mods);
+            keys.push(arrowCode);
+            sendCmd('combo', keys.join(','));
+            hiddenCatcher.value = '';
             return;
           }
 
-          let charKey = e.key.toLowerCase();
-          if (charKey.length === 1 && !['control','alt','shift','meta'].includes(charKey)) {
-            mods.push(charKey === '0' ? 48 : charKey.charCodeAt(0));
-            sendCombo(mods);
+          let keyChar = e.key.toLowerCase();
+          if (keyChar.length === 1 && keyChar !== 'control' && keyChar !== 'alt' && keyChar !== 'shift' && keyChar !== 'meta') {
+            if (keyChar === '0') {
+              keys.push(48);
+            } else {
+              keys.push(keyChar.charCodeAt(0));
+            }
+            sendCmd('combo', keys.join(','));
           }
+          hiddenCatcher.value = '';
           return;
         }
 
-        // Arrow keys
-        const singleArrow = getArrowCode(e.code);
-        if (singleArrow > 0) {
-          sendCmd('key', singleArrow.toString());
+        // 4. الأسهم المنفردة
+        let arrowCodeOnly = getArrowCode(e.code);
+        if (arrowCodeOnly > 0) {
+          sendCmd('key', arrowCodeOnly.toString());
+          hiddenCatcher.value = '';
           return;
         }
 
-        // Regular keys and special characters
+        // 5. كتابة رقم الصفر 0 وباقي الحروف
         if (e.key === '0' || e.code === 'Digit0' || e.code === 'Numpad0') {
           sendCmd('key', '48');
         } else if (e.key.length === 1) {
           sendCmd('text', e.key);
         } else {
-          const hid = getHIDCode(e.code);
-          if (hid > 0) sendCmd('key', hid.toString());
+          let code = getHIDCode(e.code, e.key);
+          if (code > 0) sendCmd('key', code.toString());
         }
+        hiddenCatcher.value = '';
       }
     }, true);
 
     function getArrowCode(code) {
-      if (code === 'ArrowUp') return 218;
-      if (code === 'ArrowDown') return 217;
-      if (code === 'ArrowLeft') return 216;
-      if (code === 'ArrowRight') return 215;
-      return 0;
-    }
-
-    function getHIDCode(code) {
-      const map = {
-        'Enter': 176, 'Escape': 177, 'Backspace': 178, 'Tab': 179,
-        'Delete': 212, 'F1': 194, 'F2': 195, 'F3': 196, 'F4': 197,
-        'F5': 198, 'F6': 199, 'F7': 200, 'F8': 201, 'F9': 202,
-        'F10': 203, 'F11': 204, 'F12': 205
-      };
-      return map[code] || 0;
-    }
-
-    // ==========================================
-    // 7. MICROPHONE ENGINE (AirPods / Bluetooth)
-    // ==========================================
-    let micStream = null;
-    let isMicLive = false;
-
-    async function toggleMicrophone() {
-      const btn = document.getElementById('micToggleBtn');
-      const text = document.getElementById('micText');
-      const icon = document.getElementById('micIcon');
-
-      if (!isMicLive) {
-        try {
-          // Request audio with Bluetooth / AirPods optimizations
-          micStream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true,
-              channelCount: 1,
-              sampleRate: 16000
-            }
-          });
-
-          isMicLive = true;
-          btn.classList.add('active');
-          text.innerText = "Mic LIVE";
-          icon.innerText = "🔴";
-          
-          // Audio streaming pipeline (placeholder for relay)
-          console.log("AirPods / Bluetooth Microphone stream active.");
-        } catch (err) {
-          alert("Microphone permission denied or no audio input found.");
-          console.error(err);
-        }
-      } else {
-        // Mute mic & clean audio tracks
-        if (micStream) {
-          micStream.getTracks().forEach(track => track.stop());
-          micStream = null;
-        }
-        isMicLive = false;
-        btn.classList.remove('active');
-        text.innerText = "Mic OFF";
-        icon.innerText = "🎙️";
+      switch(code) {
+        case 'ArrowUp': return 218; 
+        case 'ArrowDown': return 217;
+        case 'ArrowLeft': return 216; 
+        case 'ArrowRight': return 215;
+        default: return 0;
       }
     }
 
-    // ==========================================
-    // 8. VDO.NINJA PIP POPUP HELPER
-    // ==========================================
-    function openVdoNinjaPip() {
-      const url = document.getElementById('vdoNinjaUrl').value.trim();
-      if (!url) {
-        alert("Please enter your VDO.Ninja stream URL first.");
-        return;
+    function getHIDCode(code, key) {
+      switch(code) {
+        case 'Enter': return 176;
+        case 'Escape': return 177;
+        case 'Backspace': return 178;
+        case 'Tab': return 179;
+        case 'Delete': return 212;
+        case 'Digit0': return 48; 
+        case 'Numpad0': return 234; 
+        case 'F1': return 194; case 'F2': return 195; case 'F3': return 196;
+        case 'F4': return 197; case 'F5': return 198; case 'F12': return 205;
+        default: 
+          if (key === '0') return 48;
+          return 0;
       }
-      localStorage.setItem('kvm_vdo', url);
-      window.open(url, 'vdo_pip_window', 'width=480,height=320,menubar=no,toolbar=no,location=no,status=no');
     }
   </script>
 </body>
